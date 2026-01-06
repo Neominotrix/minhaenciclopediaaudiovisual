@@ -12,7 +12,7 @@
             --card-gray: #1f1f1f;
             --star-color: #f1c40f;
             --star-empty: #444;
-            --type-green: #2ecc71; /* Verde claro solicitado */
+            --type-green: #2ecc71;
         }
 
         body { background-color: var(--bg-black); color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; }
@@ -21,57 +21,68 @@
             padding: 20px 4%;
             background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
             position: fixed; width: 100%; top: 0; z-index: 1000; box-sizing: border-box;
+            display: flex; flex-direction: column;
         }
 
-        header h1 { color: var(--netflix-red); font-size: 1.8rem; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 2px; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        header h1 { color: var(--netflix-red); font-size: 1.8rem; margin: 0; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* Botão de Adicionar */
+        .btn-add {
+            background-color: var(--netflix-red);
+            color: white; border: none; padding: 10px 20px; border-radius: 4px;
+            font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .btn-add:hover { background-color: #b20710; transform: scale(1.05); }
 
         .search-container { display: flex; flex-wrap: wrap; gap: 10px; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; backdrop-filter: blur(10px); }
         .search-container input, .search-container select { background: #333; border: 1px solid #444; color: white; padding: 10px; border-radius: 4px; outline: none; flex-grow: 1; }
 
-        main { padding: 200px 4% 50px 4%; }
-        
-        .movie-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-            gap: 20px; 
-        }
+        main { padding: 220px 4% 50px 4%; }
+        .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
 
         .movie-card { 
-            background: var(--card-gray); 
-            border-radius: 8px; 
-            transition: all 0.3s ease; 
-            cursor: pointer; 
-            border-left: 5px solid var(--netflix-red);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 180px;
+            background: var(--card-gray); border-radius: 8px; transition: all 0.3s ease; 
+            border-left: 5px solid var(--netflix-red); padding: 20px; display: flex;
+            flex-direction: column; justify-content: space-between; min-height: 180px;
         }
-
-        .movie-card:hover { 
-            transform: translateY(-5px); 
-            background: #282828;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5); 
-        }
+        .movie-card:hover { transform: translateY(-5px); background: #282828; }
 
         .movie-title { font-weight: bold; font-size: 1.2rem; color: #fff; margin-bottom: 2px; }
-        
-        /* Cor do tipo alterada para verde claro */
-        .tag { font-size: 0.75rem; color: var(--type-green); text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .tag { font-size: 0.75rem; color: var(--type-green); text-transform: uppercase; font-weight: bold; }
 
+        /* Estrelas */
         .star-rating { display: inline-block; font-size: 1rem; position: relative; color: var(--star-empty); margin-top: 10px; }
         .stars-outer { display: flex; position: relative; }
         .stars-inner { position: absolute; top: 0; left: 0; white-space: nowrap; overflow: hidden; width: 0; color: var(--star-color); }
-        
         .rating-number { font-size: 0.9rem; color: #f1c40f; font-weight: bold; margin-left: 8px; }
         .review-text { font-size: 0.85rem; color: #ccc; line-height: 1.4; font-style: italic; margin-top: 15px; }
+
+        /* MODAL FORMULÁRIO */
+        #modal {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #181818; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px;
+            display: flex; flex-direction: column; gap: 15px; border: 1px solid #333;
+        }
+        .modal-content h2 { margin-top: 0; color: var(--netflix-red); }
+        .modal-content input, .modal-content textarea {
+            background: #333; border: 1px solid #444; color: white; padding: 12px; border-radius: 4px;
+        }
+        .modal-btns { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-save { background: var(--netflix-red); color: white; border: none; padding: 12px; flex: 1; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .btn-cancel { background: #555; color: white; border: none; padding: 12px; flex: 1; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>MINHA LISTA DE FILMES</h1>
+        <div class="header-top">
+            <h1>MINHA LISTA DE FILMES</h1>
+            <button class="btn-add" onclick="openModal()">+ ADICIONAR OBRA</button>
+        </div>
         <div class="search-container">
             <input type="text" id="searchInput" placeholder="Procurar obra...">
             <select id="typeFilter">
@@ -81,7 +92,6 @@
                 <option value="Comédia">Comédia</option>
                 <option value="Ficção">Ficção</option>
                 <option value="Drama">Drama</option>
-                <option value="Espionagem">Espionagem</option>
             </select>
             <select id="ratingFilter">
                 <option value="">Notas</option>
@@ -92,31 +102,38 @@
         </div>
     </header>
 
+    <div id="modal">
+        <div class="modal-content">
+            <h2>Nova Obra</h2>
+            <input type="text" id="newTitle" placeholder="Título da Obra">
+            <input type="text" id="newType" placeholder="Tipo (Ex: Ação, Drama)">
+            <input type="number" id="newRating" placeholder="Nota (0.25 a 5)" step="0.25" min="0" max="5">
+            <textarea id="newReview" placeholder="Sua descrição..." rows="4"></textarea>
+            <div class="modal-btns">
+                <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                <button class="btn-save" onclick="saveMovie()">Salvar na Lista</button>
+            </div>
+        </div>
+    </div>
+
     <main>
         <div class="movie-grid" id="movie-grid"></div>
     </main>
 
     <script>
-        const movies = [
+        // Filmes iniciais (padrão)
+        const defaultMovies = [
             { title: "Entre Facas e Segredos 3", type: "Thriller", rating: 4.75, review: "Um mistério de alto nível com roteiro impecável." },
-            { title: "O Agente Secreto", type: "Thriller", rating: 4.5, review: "Tensão constante e ótima atuação." },
-            { title: "Aperte os cintos, o piloto sumiu", type: "Comédia", rating: 2.5, review: "Humor clássico, mas alguns momentos envelheceram mal." },
-            { title: "Karate Kid: Lendas", type: "Drama/Thriller", rating: 4, review: "Uma ótima surpresa para a franquia." },
-            { title: "Código preto", type: "Ação/Espionagem", rating: 3.5, review: "Sólido filme de ação tática." },
-            { title: "Ballerina (do John Wick)", type: "Ação", rating: 4, review: "Coreografias de luta excepcionais." },
-            { title: "Resgate implacável", type: "Ação", rating: 3, review: "Ação direta e eficiente." },
-            { title: "Capitão américa admirável mundo novo", type: "Ação/Ficção", rating: 3.5, review: "Thriller político interessante para o herói." },
-            { title: "Código preto", type: "Thriller", rating: 3.5, review: "Atmosfera tensa e bem conduzida." },
-            { title: "Viagem de risco", type: "Ação/Thriller", rating: 3.5, review: "Muita adrenalina e bons momentos." },
-            { title: "Dentro", type: "Thriller/Suspense", rating: 3.5, review: "Suspense psicológico muito envolvente." },
-            { title: "Mickey 17", type: "Thriller/Ficção", rating: 4.25, review: "Ficção científica muito original." },
-            { title: "Missão impossível 8", type: "Ação", rating: 5, review: "O ápice do cinema de ação moderno." }
+            { title: "Missão impossível 8", type: "Ação", rating: 5, review: "O ápice do cinema de ação moderno." },
+            { title: "Mickey 17", type: "Thriller/Ficção", rating: 4.25, review: "Ficção científica muito original." }
         ];
+
+        // Carregar do LocalStorage ou usar os padrões
+        let movies = JSON.parse(localStorage.getItem('myMovies')) || defaultMovies;
 
         function renderMovies(filterData = movies) {
             const grid = document.getElementById('movie-grid');
             grid.innerHTML = ''; 
-            
             filterData.forEach(movie => {
                 const starPercentage = (movie.rating / 5) * 100;
                 grid.innerHTML += `
@@ -140,6 +157,32 @@
             });
         }
 
+        // Funções do Modal
+        function openModal() { document.getElementById('modal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+        function saveMovie() {
+            const title = document.getElementById('newTitle').value;
+            const type = document.getElementById('newType').value;
+            const rating = parseFloat(document.getElementById('newRating').value);
+            const review = document.getElementById('newReview').value;
+
+            if(title && type && rating) {
+                const newMovie = { title, type, rating, review };
+                movies.push(newMovie);
+                localStorage.setItem('myMovies', JSON.stringify(movies)); // Salva no navegador
+                renderMovies();
+                closeModal();
+                // Limpar campos
+                document.getElementById('newTitle').value = '';
+                document.getElementById('newType').value = '';
+                document.getElementById('newRating').value = '';
+                document.getElementById('newReview').value = '';
+            } else {
+                alert("Por favor, preencha pelo menos Título, Tipo e Nota.");
+            }
+        }
+
         function applyFilters() {
             const searchText = document.getElementById('searchInput').value.toLowerCase();
             const typeValue = document.getElementById('typeFilter').value;
@@ -147,7 +190,7 @@
 
             const filtered = movies.filter(movie => {
                 const matchesSearch = movie.title.toLowerCase().includes(searchText);
-                const matchesType = typeValue === "" || movie.type.includes(typeValue);
+                const matchesType = typeValue === "" || movie.type.toLowerCase().includes(typeValue.toLowerCase());
                 const matchesRating = ratingValue === "" || movie.rating >= parseFloat(ratingValue);
                 return matchesSearch && matchesType && matchesRating;
             });
