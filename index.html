@@ -3,194 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Letterflix</title>
+    <title>Minha Lista de Filmes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
             --netflix-red: #E50914;
             --bg-black: #141414;
-            --card-gray: #2f2f2f;
+            --card-gray: #1f1f1f;
+            --star-color: #f1c40f;
+            --star-empty: #444;
+            --type-green: #2ecc71; /* Verde claro solicitado */
         }
 
-        body {
-            background-color: var(--bg-black);
-            color: white;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
+        body { background-color: var(--bg-black); color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; }
 
-        /* Header Estilo Netflix */
         header {
             padding: 20px 4%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 10%, transparent);
-            position: fixed;
-            width: 100%;
-            z-index: 100;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
+            position: fixed; width: 100%; top: 0; z-index: 1000; box-sizing: border-box;
+        }
+
+        header h1 { color: var(--netflix-red); font-size: 1.8rem; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 2px; }
+
+        .search-container { display: flex; flex-wrap: wrap; gap: 10px; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; backdrop-filter: blur(10px); }
+        .search-container input, .search-container select { background: #333; border: 1px solid #444; color: white; padding: 10px; border-radius: 4px; outline: none; flex-grow: 1; }
+
+        main { padding: 200px 4% 50px 4%; }
+        
+        .movie-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 20px; 
+        }
+
+        .movie-card { 
+            background: var(--card-gray); 
+            border-radius: 8px; 
+            transition: all 0.3s ease; 
+            cursor: pointer; 
+            border-left: 5px solid var(--netflix-red);
+            padding: 20px;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 180px;
         }
 
-        header h1 {
-            color: var(--netflix-red);
-            font-size: 1.8rem;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+        .movie-card:hover { 
+            transform: translateY(-5px); 
+            background: #282828;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5); 
         }
 
-        /* Container Principal */
-        main {
-            padding: 100px 4% 50px 4%;
-        }
+        .movie-title { font-weight: bold; font-size: 1.2rem; color: #fff; margin-bottom: 2px; }
+        
+        /* Cor do tipo alterada para verde claro */
+        .tag { font-size: 0.75rem; color: var(--type-green); text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
 
-        .section-title {
-            font-size: 1.4rem;
-            margin-bottom: 20px;
-        }
-
-        /* Grid de Filmes */
-        .movie-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        /* Card do Filme */
-        .movie-card {
-            position: relative;
-            border-radius: 4px;
-            overflow: hidden;
-            transition: transform 0.3s ease;
-            cursor: pointer;
-            background: var(--card-gray);
-        }
-
-        .movie-card:hover {
-            transform: scale(1.1);
-            z-index: 10;
-        }
-
-        .movie-card img {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            display: block;
-        }
-
-        /* Overlay de Informações (Letterboxd Style) */
-        .movie-info {
-            padding: 15px;
-            background: var(--card-gray);
-        }
-
-        .movie-title {
-            font-weight: bold;
-            font-size: 0.9rem;
-            margin-bottom: 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .movie-meta {
-            font-size: 0.75rem;
-            color: #b3b3b3;
-            margin-bottom: 8px;
-        }
-
-        .rating {
-            color: #f1c40f;
-            font-size: 0.8rem;
-            margin-bottom: 8px;
-        }
-
-        .review-text {
-            font-size: 0.8rem;
-            color: #e5e5e5;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.4;
-        }
-
-        .tag {
-            background: rgba(255,255,255,0.1);
-            padding: 2px 6px;
-            border-radius: 2px;
-            font-size: 0.7rem;
-            margin-right: 5px;
-        }
+        .star-rating { display: inline-block; font-size: 1rem; position: relative; color: var(--star-empty); margin-top: 10px; }
+        .stars-outer { display: flex; position: relative; }
+        .stars-inner { position: absolute; top: 0; left: 0; white-space: nowrap; overflow: hidden; width: 0; color: var(--star-color); }
+        
+        .rating-number { font-size: 0.9rem; color: #f1c40f; font-weight: bold; margin-left: 8px; }
+        .review-text { font-size: 0.85rem; color: #ccc; line-height: 1.4; font-style: italic; margin-top: 15px; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>LETTERFLIX</h1>
+        <h1>MINHA LISTA DE FILMES</h1>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Procurar obra...">
+            <select id="typeFilter">
+                <option value="">Todos os tipos</option>
+                <option value="Ação">Ação</option>
+                <option value="Thriller">Thriller</option>
+                <option value="Comédia">Comédia</option>
+                <option value="Ficção">Ficção</option>
+                <option value="Drama">Drama</option>
+                <option value="Espionagem">Espionagem</option>
+            </select>
+            <select id="ratingFilter">
+                <option value="">Notas</option>
+                <option value="4.5">4.5+</option>
+                <option value="4">4.0+</option>
+                <option value="3">3.0+</option>
+            </select>
+        </div>
     </header>
 
     <main>
-        <h2 class="section-title">Minhas Avaliações Recentes</h2>
-        <div class="movie-grid" id="movie-grid">
-            </div>
+        <div class="movie-grid" id="movie-grid"></div>
     </main>
 
     <script>
-        // "BANCO DE DADOS" LOCAL
-        // Para adicionar um novo filme, basta copiar um bloco { } abaixo e colar no final da lista
         const movies = [
-            {
-                title: "Duna: Parte 2",
-                type: "Ficção Científica",
-                rating: 5,
-                review: "Visualmente arrebatador. A trilha sonora do Hans Zimmer eleva a experiência a outro patamar. Denis Villeneuve é um gênio.",
-                poster: "https://image.tmdb.org/t/p/w500/8b99vYJSN89Xv7v9S9o3p2p9D8.jpg"
-            },
-            {
-                title: "Pobres Criaturas",
-                type: "Drama / Comédia",
-                rating: 4,
-                review: "Atuação impecável da Emma Stone. Um design de produção que parece um sonho febril. Muito bizarro, mas fascinante.",
-                poster: "https://image.tmdb.org/t/p/w500/k9V9Y6M20p099W87zYy9S6VpD6.jpg"
-            },
-            {
-                title: "Oppenheimer",
-                type: "Biografia",
-                rating: 5,
-                review: "Diálogos intensos e uma montagem frenética. O som da explosão (ou o silêncio dela) é inesquecível.",
-                poster: "https://image.tmdb.org/t/p/w500/8Gxv8YSbtU07ui9D9pY90brp99L.jpg"
-            }
+            { title: "Entre Facas e Segredos 3", type: "Thriller", rating: 4.75, review: "Um mistério de alto nível com roteiro impecável." },
+            { title: "O Agente Secreto", type: "Thriller", rating: 4.5, review: "Tensão constante e ótima atuação." },
+            { title: "Aperte os cintos, o piloto sumiu", type: "Comédia", rating: 2.5, review: "Humor clássico, mas alguns momentos envelheceram mal." },
+            { title: "Karate Kid: Lendas", type: "Drama/Thriller", rating: 4, review: "Uma ótima surpresa para a franquia." },
+            { title: "Código preto", type: "Ação/Espionagem", rating: 3.5, review: "Sólido filme de ação tática." },
+            { title: "Ballerina (do John Wick)", type: "Ação", rating: 4, review: "Coreografias de luta excepcionais." },
+            { title: "Resgate implacável", type: "Ação", rating: 3, review: "Ação direta e eficiente." },
+            { title: "Capitão américa admirável mundo novo", type: "Ação/Ficção", rating: 3.5, review: "Thriller político interessante para o herói." },
+            { title: "Código preto", type: "Thriller", rating: 3.5, review: "Atmosfera tensa e bem conduzida." },
+            { title: "Viagem de risco", type: "Ação/Thriller", rating: 3.5, review: "Muita adrenalina e bons momentos." },
+            { title: "Dentro", type: "Thriller/Suspense", rating: 3.5, review: "Suspense psicológico muito envolvente." },
+            { title: "Mickey 17", type: "Thriller/Ficção", rating: 4.25, review: "Ficção científica muito original." },
+            { title: "Missão impossível 8", type: "Ação", rating: 5, review: "O ápice do cinema de ação moderno." }
         ];
 
-        function renderMovies() {
+        function renderMovies(filterData = movies) {
             const grid = document.getElementById('movie-grid');
+            grid.innerHTML = ''; 
             
-            movies.forEach(movie => {
-                // Criar as estrelas baseado na nota
-                let stars = '';
-                for(let i=0; i<5; i++) {
-                    stars += i < movie.rating ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
-                }
-
-                const card = `
+            filterData.forEach(movie => {
+                const starPercentage = (movie.rating / 5) * 100;
+                grid.innerHTML += `
                     <div class="movie-card">
-                        <img src="${movie.poster}" alt="${movie.title}">
-                        <div class="movie-info">
+                        <div>
                             <div class="movie-title">${movie.title}</div>
-                            <div class="movie-meta">
-                                <span class="tag">${movie.type}</span>
+                            <div class="tag">${movie.type}</div>
+                            <div class="star-rating">
+                                <div class="stars-outer">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                    <div class="stars-inner" style="width: ${starPercentage}%">
+                                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="rating">${stars}</div>
-                            <p class="review-text">"${movie.review}"</p>
+                            <span class="rating-number">${movie.rating}</span>
                         </div>
+                        <p class="review-text">"${movie.review}"</p>
                     </div>
                 `;
-                grid.innerHTML += card;
             });
         }
 
-        // Inicia a renderização
+        function applyFilters() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const typeValue = document.getElementById('typeFilter').value;
+            const ratingValue = document.getElementById('ratingFilter').value;
+
+            const filtered = movies.filter(movie => {
+                const matchesSearch = movie.title.toLowerCase().includes(searchText);
+                const matchesType = typeValue === "" || movie.type.includes(typeValue);
+                const matchesRating = ratingValue === "" || movie.rating >= parseFloat(ratingValue);
+                return matchesSearch && matchesType && matchesRating;
+            });
+            renderMovies(filtered);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('typeFilter').addEventListener('change', applyFilters);
+        document.getElementById('ratingFilter').addEventListener('change', applyFilters);
+
         renderMovies();
     </script>
 </body>
