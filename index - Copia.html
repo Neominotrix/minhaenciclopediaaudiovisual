@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Lista de Entretenimento - Cloud</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --netflix-red: #E50914;
+            --bg-black: #141414;
+            --card-gray: #1f1f1f;
+            --star-color: #f1c40f;
+            --type-green: #2ecc71;
+        }
+
+        body { 
+            background-color: var(--bg-black); 
+            color: white; 
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding-top: 220px; 
+        }
+
+        header {
+            background-color: rgba(0,0,0,0.95);
+            position: fixed; top: 0; width: 100%; z-index: 1000; padding: 20px 4%;
+            box-sizing: border-box; border-bottom: 1px solid #333;
+        }
+
+        .header-main { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { color: var(--netflix-red); font-size: 1.5rem; margin: 0; text-transform: uppercase; letter-spacing: 2px; }
+
+        nav { display: flex; gap: 15px; }
+        .nav-link { 
+            color: #aaa; text-decoration: none; font-size: 0.9rem; font-weight: bold; 
+            cursor: pointer; padding: 5px 10px; border-radius: 4px;
+        }
+        .nav-link.active { color: white; background: var(--netflix-red); }
+
+        .filter-bar { display: flex; gap: 10px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; }
+        .filter-bar input, .filter-bar select {
+            background: #333; border: 1px solid #555; color: white; padding: 12px; border-radius: 4px; outline: none; font-size: 1rem;
+        }
+
+        #searchInput { flex: 2; } 
+        #ratingFilter, #typeFilter { flex: 1; }
+
+        .btn-add { background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        
+        /* Botão de Migração */
+        #migrationBtn {
+            background: #f39c12; color: #fff; border: none; padding: 10px; border-radius: 4px; 
+            font-weight: bold; cursor: pointer; margin-right: 10px; display: none;
+        }
+
+        main { padding: 0 4% 50px 4%; }
+        .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; }
+
+        .movie-card { 
+            background: var(--card-gray); border-radius: 8px; overflow: hidden; position: relative; 
+            min-height: 350px; display: flex; flex-direction: column; transition: transform 0.2s;
+        }
+        .movie-card:hover { transform: scale(1.03); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+
+        .movie-poster-container { width: 100%; height: 300px; background: #333; display: flex; align-items: center; justify-content: center; color: #555; font-size: 3rem; }
+        .movie-poster { width: 100%; height: 100%; object-fit: cover; }
+
+        .movie-info { padding: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
+        .movie-title { font-weight: bold; font-size: 1.1rem; margin-top: 5px; }
+        .tag { color: var(--type-green); font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+
+        .star-rating { margin-top: 10px; position: relative; display: inline-block; color: #444; }
+        .stars-outer { display: flex; position: relative; }
+        .stars-inner { position: absolute; top: 0; left: 0; white-space: nowrap; overflow: hidden; width: 0; color: var(--star-color); }
+        .rating-number { font-weight: bold; color: var(--star-color); margin-left: 5px; font-size: 0.9rem; }
+
+        .btn-delete {
+            position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); border: none;
+            color: #fff; cursor: pointer; font-size: 0.9rem; padding: 8px; border-radius: 50%; opacity: 0; transition: opacity 0.2s;
+        }
+        .movie-card:hover .btn-delete { opacity: 1; }
+
+        #modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+        .modal-content { background: #181818; padding: 30px; border-radius: 8px; width: 90%; max-width: 450px; display: flex; flex-direction: column; gap: 15px; }
+        .modal-content input, .modal-content textarea { background: #333; border: 1px solid #444; color: white; padding: 12px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-main">
+            <h1>MINHA LISTA</h1>
+            <nav>
+                <div class="nav-link active" onclick="window.switchTab('filmes', this)">Filmes</div>
+                <div class="nav-link" onclick="window.switchTab('series', this)">Séries</div>
+                <div class="nav-link" onclick="window.switchTab('animacoes', this)">Animações</div>
+            </nav>
+            <div>
+                <button id="migrationBtn" onclick="window.migrateToFirebase()">MIGRAR DADOS INICIAIS</button>
+                <button class="btn-add" onclick="window.openModal()">+ ADICIONAR</button>
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            <input type="text" id="searchInput" placeholder="Pesquisar por título..." oninput="window.applyFilters()">
+            <select id="typeFilter" onchange="window.applyFilters()"><option value="">Todos os Tipos</option></select>
+            <select id="ratingFilter" onchange="window.applyFilters()">
+                <option value="">Todas as Notas</option>
+                <option value="5">5 estrelas</option><option value="4">4.0+</option><option value="3">3.0+</option><option value="2">2.0+</option><option value="1">1.0+</option>
+            </select>
+        </div>
+    </header>
+
+    <div id="modal">
+        <div class="modal-content">
+            <h2 style="color: var(--netflix-red); margin: 0;">Nova Obra</h2>
+            <input type="text" id="newTitle" placeholder="Título">
+            <input type="text" id="newImage" placeholder="URL da Imagem">
+            <input type="text" id="newType" placeholder="Tipo">
+            <input type="number" id="newRating" placeholder="Nota" step="0.25">
+            <textarea id="newReview" placeholder="Seu relato..." rows="3"></textarea>
+            <div style="display:flex; gap:10px;">
+                <button onclick="window.closeModal()" style="flex:1; padding:10px; cursor:pointer; background:#444; border:none; color:white;">Cancelar</button>
+                <button onclick="window.saveEntry()" style="flex:1; padding:10px; background:var(--netflix-red); color:white; font-weight:bold;">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <p id="stats" style="color: #666; margin-bottom: 20px; font-size: 0.9rem;"></p>
+        <div class="movie-grid" id="movie-grid"></div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // CONFIGURAÇÃO FIREBASE (Substitua pelos seus dados!)
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4QIzbdBZB8IUloK6KPlMrBZ83BTYzc9Q",
+            authDomain: "listaaudiovisual.firebaseapp.com",
+            projectId: "listaaudiovisual",
+            storageBucket: "listaaudiovisual.firebasestorage.app",
+            messagingSenderId: "790211725412",
+            appId: "1:790211725412:web:2b3330d88dc1920ddb7771"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- LISTAS INICIAIS (PARA MIGRAÇÃO) ---
+        const initialMovies = [
+            { title: "007 – todos", type: "Ação/Thriller", rating: 4, review: "", imageUrl: "" },
+            { title: "300", type: "Ficção/Ação", rating: 4.75, review: "", imageUrl: "" },
+            { title: "A chegada", type: "Ficção/Suspense", rating: 4.25, review: "", imageUrl: "" },
+            { title: "A substância", type: "Drama/Ficção", rating: 5, review: "", imageUrl: "" },
+            { title: "Ainda estou aqui", type: "Drama", rating: 5, review: "", imageUrl: "" },
+            { title: "Interestelar", type: "Ficção/Drama", rating: 4.5, review: "", imageUrl: "" },
+            { title: "Oppenheimer", type: "Ficção/Drama", rating: 5, review: "", imageUrl: "" }
+            // ... Adicione os outros aqui depois ou use para migrar o que já tem
+        ];
+
+        const initialSeries = [
+            { title: "Breaking Bad", type: "Drama", rating: 5, review: "", imageUrl: "" },
+            { title: "Dark", type: "Ficção", rating: 5, review: "", imageUrl: "" }
+        ];
+
+        const initialAnimations = [
+            { title: "Invencível", type: "Ação", rating: 5, review: "", imageUrl: "" },
+            { title: "X-men 97", type: "Ação/Ficção", rating: 5, review: "", imageUrl: "" }
+        ];
+
+        let dataStore = { filmes: [], series: [], animacoes: [] };
+        let currentTab = 'filmes';
+
+        // --- FUNÇÕES EXPOSTAS AO WINDOW ---
+        window.openModal = () => document.getElementById('modal').style.display = 'flex';
+        window.closeModal = () => document.getElementById('modal').style.display = 'none';
+
+        window.switchTab = async (tab, element) => {
+            currentTab = tab;
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            updateTypeFilterOptions();
+            await fetchFromFirebase();
+        };
+
+        async function fetchFromFirebase() {
+            document.getElementById('stats').innerText = "Carregando dados da nuvem...";
+            const querySnapshot = await getDocs(collection(db, currentTab));
+            const list = [];
+            querySnapshot.forEach((doc) => {
+                list.push({ fireId: doc.id, ...doc.data() });
+            });
+            
+            dataStore[currentTab] = list;
+            
+            // Mostrar botão de migração se o banco estiver vazio
+            document.getElementById('migrationBtn').style.display = (list.length === 0) ? 'inline-block' : 'none';
+            
+            renderData();
+        }
+
+        function renderData(filterData = null) {
+            const data = filterData || [...dataStore[currentTab]].sort((a, b) => a.title.localeCompare(b.title));
+            const grid = document.getElementById('movie-grid');
+            grid.innerHTML = ''; 
+            document.getElementById('stats').innerText = `Mostrando ${data.length} itens em ${currentTab.toUpperCase()}`;
+
+            data.forEach((item) => {
+                const starPercent = (item.rating / 5) * 100;
+                grid.innerHTML += `
+                    <div class="movie-card">
+                        <button class="btn-delete" onclick="window.deleteItem('${item.fireId}')"><i class="fas fa-trash"></i></button>
+                        <div class="movie-poster-container">
+                            ${item.imageUrl ? `<img src="${item.imageUrl}" class="movie-poster">` : `<i class="fas fa-film"></i>`}
+                        </div>
+                        <div class="movie-info">
+                            <div>
+                                <div class="tag">${item.type}</div>
+                                <div class="movie-title">${item.title}</div>
+                                <div class="star-rating">
+                                    <div class="stars-outer"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                    <div class="stars-inner" style="width:${starPercent}%"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div></div>
+                                    <span class="rating-number">${item.rating}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        window.saveEntry = async () => {
+            const title = document.getElementById('newTitle').value;
+            const type = document.getElementById('newType').value;
+            const rating = parseFloat(document.getElementById('newRating').value);
+            const imageUrl = document.getElementById('newImage').value;
+            const review = document.getElementById('newReview').value;
+
+            if(title && type && !isNaN(rating)) {
+                await addDoc(collection(db, currentTab), { title, type, rating, imageUrl, review });
+                window.closeModal();
+                await fetchFromFirebase();
+            }
+        };
+
+        window.deleteItem = async (id) => {
+            if(confirm("Excluir permanentemente da nuvem?")) {
+                await deleteDoc(doc(db, currentTab, id));
+                await fetchFromFirebase();
+            }
+        };
+
+        window.migrateToFirebase = async () => {
+            if(!confirm("Deseja subir a lista padrão para o Firebase agora?")) return;
+            document.getElementById('stats').innerText = "Migrando... aguarde.";
+            
+            const migrationMap = { 'filmes': initialMovies, 'series': initialSeries, 'animacoes': initialAnimations };
+            
+            for (let tab in migrationMap) {
+                for (let item of migrationMap[tab]) {
+                    await addDoc(collection(db, tab), item);
+                }
+            }
+            alert("Migração concluída com sucesso!");
+            location.reload();
+        };
+
+        window.applyFilters = () => {
+            const text = document.getElementById('searchInput').value.toLowerCase();
+            const rate = document.getElementById('ratingFilter').value;
+            const typeSelected = document.getElementById('typeFilter').value;
+            const filtered = dataStore[currentTab].filter(item => {
+                return item.title.toLowerCase().includes(text) && 
+                       (rate === "" || item.rating >= parseFloat(rate)) && 
+                       (typeSelected === "" || item.type === typeSelected);
+            });
+            renderData(filtered);
+        };
+
+        function updateTypeFilterOptions() {
+            const select = document.getElementById('typeFilter');
+            const types = [...new Set(dataStore[currentTab].map(item => item.type))].sort();
+            select.innerHTML = '<option value="">Todos os Tipos</option>';
+            types.forEach(t => select.innerHTML += `<option value="${t}">${t}</option>`);
+        }
+
+        // Inicialização
+        fetchFromFirebase();
+    </script>
+</body>
+</html>
