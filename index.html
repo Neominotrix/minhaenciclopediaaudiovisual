@@ -129,8 +129,9 @@
 
         .movie-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 20px;
+            /* AJUSTADO: Reduzido em 30% (de 288px para 210px) */
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 25px;
         }
 
         .movie-card {
@@ -138,7 +139,8 @@
             border-radius: 8px;
             overflow: hidden;
             position: relative;
-            min-height: 400px; /* Aumentado levemente para o review */
+            /* AJUSTADO: Reduzido em 30% (de 640px para 480px) */
+            min-height: 480px;
             display: flex;
             flex-direction: column;
             transition: transform 0.2s;
@@ -151,13 +153,15 @@
 
         .movie-poster-container {
             width: 100%;
-            height: 260px;
+            /* AJUSTADO: Reduzido em 30% (de 416px para 310px) */
+            height: 310px;
             background: #333;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #555;
-            font-size: 3rem;
+            /* AJUSTADO: Ícone proporcionalmente menor */
+            font-size: 3rem; 
         }
 
         .movie-poster {
@@ -168,7 +172,7 @@
         }
 
         .movie-info {
-            padding: 12px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -177,7 +181,7 @@
 
         .movie-title {
             font-weight: bold;
-            font-size: 0.95rem;
+            font-size: 1rem;
             margin-top: 5px;
             height: 2.8em;
             overflow: hidden;
@@ -185,7 +189,7 @@
 
         .tag {
             color: var(--type-green);
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: bold;
             text-transform: uppercase;
         }
@@ -194,13 +198,13 @@
             margin-top: 5px;
             display: flex;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .stars-outer {
             position: relative;
             color: #444;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
         }
 
         .stars-inner {
@@ -217,22 +221,20 @@
             font-weight: bold;
             color: var(--star-color);
             margin-left: 8px;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
         }
 
-        /* ESTILO DO REVIEW */
+        /* ESTILO DO REVIEW SEM CORTES */
         .movie-review {
-            font-size: 0.75rem;
-            color: #bbb;
+            font-size: 0.85rem;
+            color: #ccc;
             font-style: italic;
             border-top: 1px solid #333;
-            padding-top: 8px;
+            padding-top: 10px;
             margin-top: 5px;
-            line-height: 1.2;
-            display: -webkit-box;
-            -webkit-line-clamp: 3; /* Limita a 3 linhas para não quebrar o card */
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+            line-height: 1.4;
+            /* Mantido sem cortes para ler tudo */
+            word-wrap: break-word;
         }
 
         .btn-delete {
@@ -292,17 +294,15 @@
             header { padding: 15px 4%; }
             .header-main { flex-direction: column; gap: 15px; }
             nav { width: 100%; justify-content: space-between; }
-            .movie-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
-            .movie-card { min-height: 350px; }
-            .movie-poster-container { height: 200px; }
+            /* Ajuste no mobile também para ficar proporcional */
+            .movie-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+            .movie-card { min-height: 450px; }
+            .movie-poster-container { height: 300px; }
         }
 
-        /* BLOQUEIO TEMPORÁRIO DE ADMINISTRAÇÃO */
-                #migrationBtn, 
-                #tmdbUpdateBtn, 
-                    .btn-add, 
-                    .btn-delete {
-                        display: none !important;
+        /* BLOQUEIO TEMPORÁRIO DE ADMINISTRAÇÃO (Opcional) */
+        #migrationBtn, #tmdbUpdateBtn, .btn-add, .btn-delete {
+            display: none !important;
         }
     </style>
 </head>
@@ -350,7 +350,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÕES (Lembre-se de manter suas chaves) ---
         const firebaseConfig = {
             apiKey: "AIzaSyD4QIzbdBZB8IUloK6KPlMrBZ83BTYzc9Q",
             authDomain: "listaaudiovisual.firebaseapp.com",
@@ -367,7 +366,6 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        // Funções de Busca Poster
         async function getPoster(title, type) {
             const cat = (type === 'series') ? 'tv' : 'movie';
             const clean = title.split('(')[0].split('–')[0].trim();
@@ -378,7 +376,6 @@
             } catch (err) { return ""; }
         }
 
-        // --- RENDERIZAÇÃO (AQUI ESTÁ A MUDANÇA) ---
         function renderData(filterData = null) {
             const sorted = [...dataStore[currentTab]].sort((a,b) => a.title.localeCompare(b.title));
             const d = filterData || sorted;
@@ -388,8 +385,7 @@
             
             d.forEach(item => {
                 const p = (item.rating/5)*100;
-                // Verificamos se existe o review para criar a Div dele
-                const reviewHtml = item.review ? `<div class="movie-review" title="${item.review}">"${item.review}"</div>` : '';
+                const reviewHtml = item.review ? `<div class="movie-review">"${item.review}"</div>` : '';
 
                 g.innerHTML += `
                 <div class="movie-card">
@@ -405,14 +401,13 @@
                                 <div class="stars-outer">★★★★★<div class="stars-inner" style="width:${p}%">★★★★★</div></div>
                                 <span class="rating-number">${item.rating}</span>
                             </div>
-                            ${reviewHtml} 
+                            ${reviewHtml}
                         </div>
                     </div>
                 </div>`;
             });
         }
 
-        // Funções de Janela / Modal
         window.openModal = () => document.getElementById('modal').style.display = 'flex';
         window.closeModal = () => {
             document.getElementById('modal').style.display = 'none';
@@ -470,4 +465,3 @@
     </script>
 </body>
 </html>
-
