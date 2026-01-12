@@ -276,6 +276,74 @@
             .btn-delete {
                 display: none !important;
         }
+
+        /* --- AJUSTES PARA DISPOSITIVOS MÓVEIS (Celulares) --- */
+@media (max-width: 768px) {
+    body {
+        padding-top: 180px; /* Reduz o espaço do topo no mobile */
+    }
+
+    header {
+        padding: 15px 4%;
+    }
+
+    .header-main {
+        flex-direction: column; /* Título e Nav ficam um em cima do outro */
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    h1 {
+        font-size: 1.2rem; /* Título menor */
+    }
+
+    nav {
+        width: 100%;
+        justify-content: space-between; /* Distribui abas igualmente */
+    }
+
+    .nav-link {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+        flex: 1;
+        text-align: center;
+    }
+
+    .filter-bar {
+        padding: 10px;
+        flex-direction: column; /* Filtros ficam em cascata */
+    }
+
+    .filter-bar input, .filter-bar select {
+        width: 100%; /* Ocupam a largura toda */
+        font-size: 0.9rem;
+    }
+
+    .movie-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 colunas por linha no celular */
+        gap: 15px;
+    }
+
+    .movie-card {
+        min-height: 300px; /* Cards menores para caberem dois */
+    }
+
+    .movie-poster-container {
+        height: 200px; /* Imagem menor */
+    }
+
+    .movie-title {
+        font-size: 0.85rem;
+    }
+}
+
+/* Ajuste para telas muito pequenas (iPhone SE, etc) */
+@media (max-width: 400px) {
+    .movie-grid {
+        grid-template-columns: repeat(2, 1fr); /* Mantém 2 colunas, mas diminui o gap */
+        gap: 10px;
+    }
+}
     </style>
     
 </head>
