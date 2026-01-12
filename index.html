@@ -138,7 +138,7 @@
             border-radius: 8px;
             overflow: hidden;
             position: relative;
-            min-height: 380px;
+            min-height: 400px; /* Aumentado levemente para o review */
             display: flex;
             flex-direction: column;
             transition: transform 0.2s;
@@ -194,6 +194,7 @@
             margin-top: 5px;
             display: flex;
             align-items: center;
+            margin-bottom: 8px;
         }
 
         .stars-outer {
@@ -217,6 +218,21 @@
             color: var(--star-color);
             margin-left: 8px;
             font-size: 0.8rem;
+        }
+
+        /* ESTILO DO REVIEW */
+        .movie-review {
+            font-size: 0.75rem;
+            color: #bbb;
+            font-style: italic;
+            border-top: 1px solid #333;
+            padding-top: 8px;
+            margin-top: 5px;
+            line-height: 1.2;
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* Limita a 3 linhas para não quebrar o card */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .btn-delete {
@@ -269,84 +285,25 @@
             padding: 12px;
             border-radius: 4px;
         }
-        
-        /* BLOQUEIO TEMPORÁRIO DE ADMINISTRAÇÃO */
-        #migrationBtn, 
-        #tmdbUpdateBtn, 
-            .btn-add, 
-            .btn-delete {
-                display: none !important;
+
+        /* --- AJUSTES PARA DISPOSITIVOS MÓVEIS --- */
+        @media (max-width: 768px) {
+            body { padding-top: 180px; }
+            header { padding: 15px 4%; }
+            .header-main { flex-direction: column; gap: 15px; }
+            nav { width: 100%; justify-content: space-between; }
+            .movie-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+            .movie-card { min-height: 350px; }
+            .movie-poster-container { height: 200px; }
         }
 
-        /* --- AJUSTES PARA DISPOSITIVOS MÓVEIS (Celulares) --- */
-@media (max-width: 768px) {
-    body {
-        padding-top: 180px; /* Reduz o espaço do topo no mobile */
-    }
-
-    header {
-        padding: 15px 4%;
-    }
-
-    .header-main {
-        flex-direction: column; /* Título e Nav ficam um em cima do outro */
-        gap: 15px;
-        margin-bottom: 15px;
-    }
-
-    h1 {
-        font-size: 1.2rem; /* Título menor */
-    }
-
-    nav {
-        width: 100%;
-        justify-content: space-between; /* Distribui abas igualmente */
-    }
-
-    .nav-link {
-        font-size: 0.8rem;
-        padding: 8px 12px;
-        flex: 1;
-        text-align: center;
-    }
-
-    .filter-bar {
-        padding: 10px;
-        flex-direction: column; /* Filtros ficam em cascata */
-    }
-
-    .filter-bar input, .filter-bar select {
-        width: 100%; /* Ocupam a largura toda */
-        font-size: 0.9rem;
-    }
-
-    .movie-grid {
-        grid-template-columns: repeat(2, 1fr); /* 2 colunas por linha no celular */
-        gap: 15px;
-    }
-
-    .movie-card {
-        min-height: 300px; /* Cards menores para caberem dois */
-    }
-
-    .movie-poster-container {
-        height: 200px; /* Imagem menor */
-    }
-
-    .movie-title {
-        font-size: 0.85rem;
-    }
-}
-
-/* Ajuste para telas muito pequenas (iPhone SE, etc) */
-@media (max-width: 400px) {
-    .movie-grid {
-        grid-template-columns: repeat(2, 1fr); /* Mantém 2 colunas, mas diminui o gap */
-        gap: 10px;
-    }
-}
+        /* BLOQUEIO TEMPORÁRIO (Opcional - Comente para liberar) */
+        /*
+        #migrationBtn, #tmdbUpdateBtn, .btn-add, .btn-delete {
+            display: none !important;
+        }
+        */
     </style>
-    
 </head>
 <body>
 
@@ -375,7 +332,7 @@
             <input type="text" id="newTitle" placeholder="Título">
             <input type="text" id="newType" placeholder="Tipo (Ex: Ficção)">
             <input type="number" id="newRating" placeholder="Nota" step="0.25">
-            <textarea id="newReview" placeholder="Seu relato..."></textarea>
+            <textarea id="newReview" placeholder="Seu relato..." rows="4"></textarea>
             <div style="display:flex; gap:10px;">
                 <button onclick="window.closeModal()" style="flex:1; padding:10px; background:#444; border:none; color:white;">Cancelar</button>
                 <button onclick="window.saveEntry()" style="flex:1; padding:10px; background:var(--netflix-red); color:white; font-weight:bold;">Salvar</button>
@@ -392,7 +349,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- PREENCHA SUAS CHAVES AQUI ---
+        // --- CONFIGURAÇÕES (Lembre-se de manter suas chaves) ---
         const firebaseConfig = {
             apiKey: "AIzaSyD4QIzbdBZB8IUloK6KPlMrBZ83BTYzc9Q",
             authDomain: "listaaudiovisual.firebaseapp.com",
@@ -401,406 +358,15 @@
             messagingSenderId: "790211725412",
             appId: "1:790211725412:web:2b3330d88dc1920ddb7771"
         };
-
-        const TMDB_API_KEY = "d09c3aec764d2a8d3307a3f96517ac15"
-
+        const TMDB_API_KEY = "d09c3aec764d2a8d3307a3f96517ac15";
 
         const app = initializeApp(firebaseConfig);
         const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 
-        // --- LISTA DE FILMES CONSOLIDADA ---
-        const initialMovies = [
-            { title: "007", type: "Ação/Thriller", rating: 4.0 },
-                    { title: "300", type: "Ficção/Ação", rating: 4.75 },
-                    { title: "300: a ascensão do império", type: "Ficção/Ação", rating: 4.0 },
-                    { title: "60 minutos", type: "Ação/Luta", rating: 2.5 },
-                    { title: "65: ameaça pré-histórica", type: "Ação/Ficção", rating: 2.5 },
-                    { title: "A chegada", type: "Ficção/Suspense", rating: 4.25 },
-                    { title: "A Grande Muralha", type: "Ação", rating: 3 },
-                    { title: "A guerra do amanhã", type: "Ação/Ficção", rating: 3.5 },
-                    { title: "A hora do rush (saga)", type: "Ação/Comédia", rating: 4.5 },
-                    { title: "A mulher rei", type: "Ação/Drama", rating: 5.0 },
-                    { title: "A múmia (1999, 2001 e 2008)", type: "Ação/Ficção/Thriller", rating: 3.5 },
-                    { title: "A múmia (2017)", type: "Ação/Ficção/Thriller", rating: 2.5 },
-                    { title: "A onda (die welle)", type: "Thriller", rating: 5.0 },
-                    { title: "A origem", type: "Suspense/Thriller", rating: 4.0 },
-                    { title: "A presença", type: "Ficção", rating: 1.0 },
-                    { title: "A substância", type: "Drama/Ficção", rating: 5.0 },
-                    { title: "A vila", type: "Ficção Científica", rating: 3.5 },
-                    { title: "Acompanhante Perfeita", type: "Thriller/Ficção", rating: 5.0 },
-                    { title: "Adão Negro", type: "Ficção", rating: 3.5 },
-                    { title: "Ainda estou aqui", type: "Drama", rating: 5 },
-                    { title: "Alerta Vermelho", type: "Ação/Thriller", rating: 4.0 },
-                    { title: "Alice (Subservience)", type: "Ficção", rating: 3.0 },
-                    { title: "Aliens (todos)", type: "Ficção/Terror", rating: 3.5 },
-                    { title: "Amor e Monstros", type: "Ficção/Thriller", rating: 4 },
-                    { title: "Amsterdam", type: "Comédia/Mistério", rating: 4.0 },
-                    { title: "Anaconda", type: "Comédia", rating: 3.5 },
-                    { title: "Animais Fantásticos e Onde Habitam", type: "Ficção/Fantasia", rating: 4.0 },
-                    { title: "Anônimo 1 e 2", type: "Ação", rating: 4.5 },
-                    { title: "Apertem os cintos, o piloto sumiu", type: "Comédia", rating: 2.5 },
-                    { title: "Aquaman (saga)", type: "Ação/Ficção", rating: 4.5 },
-                    { title: "Armadilha", type: "Thriller/Crime", rating: 4.0 },
-                    { title: "As Marvels", type: "Ficção", rating: 4.0 },
-                    { title: "Ash: Planeta parasita", type: "Ficção", rating: 1.0 },
-                    { title: "Atlas", type: "Ficção/Ação", rating: 3.5 },
-                    { title: "Awareness - a realidade é uma ilusão", type: "Ação/Ficção", rating: 3.0 },
-                    { title: "Bad Boys", type: "Ação", rating: 4.0 },
-                    { title: "Bagagem de Risco", type: "Ação/Suspense/Thriller", rating: 4.5 },
-                    { title: "Ballerina", type: "Ação", rating: 4.25 },
-                    { title: "Barbie", type: "Drama/Fantasia", rating: 5.0 },
-                    { title: "Batem à porta", type: "Suspense/Ficção", rating: 4.0 },
-                    { title: "Batman (2022)", type: "Ação/Thriller/Ficção", rating: 4.0 },
-                    { title: "Batman x Super-homem", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "Batman: o cavalheiro das trevas (1 e 2)", type: "Ação/Thriller/Ficção", rating: 4.75 },
-                    { title: "Beetlejuice 1 e 2", type: "Comédia/Terror", rating: 4.0 },
-                    { title: "Besouro azul", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "Biônicos", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "Bliss em busca da felicidade", type: "Ficção/Romance", rating: 2.5 },
-                    { title: "Bohemian Rhapsody", type: "Documentário/Biografia", rating: 5.0 },
-                    { title: "Brick", type: "Suspense", rating: 3.0 },
-                    { title: "Bright", type: "Ação/Thriller", rating: 4.0 },
-                    { title: "Brightburn: filho das trevas", type: "Terror/Ficção", rating: 4.0 },
-                    { title: "Caçadores de emoção", type: "Ação/Thriller", rating: 5.0 },
-                    { title: "Capitão américa admirável mundo novo", type: "Ação/Ficção", rating: 3.5 },
-                    { title: "Carga explosiva (1, 2 e 3)", type: "Ação/Thriller", rating: 3.5 },
-                    { title: "Cavaleiros do zodíaco – Saint Seyia: o começo", type: "Ação/Ficção", rating: 2.5 },
-                    { title: "Chefes de Estado", type: "Ação/Comédia", rating: 3.5 },
-                    { title: "Cidade de Deus", type: "Drama/Crime", rating: 5.0 },
-                    { title: "Cidade dos anjos", type: "Drama/Ficção", rating: 5.0 },
-                    { title: "Círculo de fogo (saga)", type: "Ficção/Ação", rating: 4.5 },
-                    { title: "Clonaram Tyrone", type: "Thriller/Ficção", rating: 4.0 },
-                    { title: "Cloverfield: monstro", type: "Suspense/Thriller", rating: 4.0 },
-                    { title: "Cloverfield: rua 10", type: "Suspense/Thriller", rating: 5.0 },
-                    { title: "Clube da luta para meninas", type: "Comédia", rating: 3.0 },
-                    { title: "Code 8: Renegados", type: "Ficção/Thriller", rating: 3.0 },
-                    { title: "Código preto (Thriller)", type: "Thriller", rating: 3.5 },
-                    { title: "Como estrelas na terra", type: "Drama Biográfico", rating: 5.0 },
-                    { title: "Conclave", type: "Thriller/Drama", rating: 5.0 },
-                    { title: "Conrack", type: "Drama", rating: 5.0 },
-                    { title: "Contra o mundo", type: "Ação/Luta", rating: 3.0 },
-                    { title: "Coringa 1", type: "Drama", rating: 5.0 },
-                    { title: "Coringa 2", type: "Drama", rating: 1.5 },
-                    { title: "Corra!", type: "Terror/Ação", rating: 3.5 },
-                    { title: "Cruella", type: "Comédia/Drama", rating: 5.0 },
-                    { title: "Deadpool (saga)", type: "Ação/Ficção", rating: 5.0 },
-                    { title: "Dentro (Thriller)", type: "Suspense/Thriller", rating: 3.25 },
-                    { title: "dIAbólica (Afraid)", type: "Suspense/Ficção Científica", rating: 4.5 },
-                    { title: "Diário de motocicleta", type: "Drama Biográfico", rating: 5.0 },
-                    { title: "Distrito 9", type: "Ficção/Drama", rating: 5.0 },
-                    { title: "Divergente (saga)", type: "Ação/Ficção", rating: 3.0 },
-                    { title: "Doom", type: "Ação/Ficção", rating: 3.0 },
-                    { title: "Drop: ameaça anônima", type: "Thriller/Suspense", rating: 1.75 },
-                    { title: "Duna", type: "Ação/Ficção", rating: 5.0 },
-                    { title: "Dungeons & Dragons: a ascensão", type: "Ação/Ficção", rating: 5.0 },
-                    { title: "Dupla Jornada", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "Duro de atuar", type: "Comédia", rating: 4.5 },
-                    { title: "Duro de matar", type: "Ação", rating: 4.5 },
-                    { title: "É o fim", type: "Comédia/Ficção", rating: 4.0 },
-                    { title: "Enola Holmes", type: "Ficção/Thriller", rating: 4.0 },
-                    { title: "Ensaio sobre a cegueira", type: "Suspense/Drama", rating: 4.75 },
-                    { title: "Entre facas e segredos (1, 2 e 3)", type: "Thriller", rating: 5.0 },
-                    { title: "Entre montanhas", type: "Ficção/Ação", rating: 3.5 },
-                    { title: "Entrevista com o demônio", type: "Terror/Ficção", rating: 3.0 },
-                    { title: "Entrevista com vampiro", type: "Terror/Fantasia", rating: 3.0 },
-                    { title: "Equilibrium", type: "Ação/Thriller", rating: 4.0 },
-                    { title: "Era um vez em hollywood", type: "Drama/Comédia/Thriller", rating: 3.5 },
-                    { title: "Esquadrão suicida", type: "Ficção", rating: 4.0 },
-                    { title: "Estrelas além do tempo", type: "Drama Biográfico", rating: 5.0 },
-                    { title: "Eternos", type: "Ficção/Ação", rating: 2.0 },
-                    { title: "Eu sou a lenda", type: "Ficção/Drama", rating: 4.0 },
-                    { title: "Eu, Daniel Blake", type: "Drama", rating: 5.0 },
-                    { title: "Ex Machina", type: "Ficção/Drama", rating: 3.5 },
-                    { title: "Extermínio (saga)", type: "Ficção/Suspense/Thriller", rating: 4.25 },
-                    { title: "Filadélfia", type: "Drama", rating: 5.0 },
-                    { title: "Five Nights at Freddys", type: "Terror/Comédia", rating: 2.0 },
-                    { title: "Fratura", type: "Thriller/Mistério", rating: 3.0 },
-                    { title: "Freaks - um de nós", type: "Ação/Ficção", rating: 2.0 },
-                    { title: "Free Guy", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "Fúria de Titãs 1 e 2", type: "Ficção/Ação", rating: 4.0 },
-                    { title: "Furiosa: uma saga Mad Max", type: "Thriller/Ação", rating: 4.5 },
-                    { title: "G.I joe (saga)", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "GATTACA", type: "Ficção/Drama", rating: 5.0 },
-                    { title: "Gladiador 1", type: "Ação/Drama", rating: 4.75 },
-                    { title: "Gladiador 2", type: "Ação/Drama", rating: 4.0 },
-                    { title: "Godzilla (saga)", type: "Ficção/Ação", rating: 4.0 },
-                    { title: "Godzilla Minus One", type: "Drama/Ficção", rating: 5.0 },
-                    { title: "Godzilla x Kong + Godzilla e Kong", type: "Ficção/Ação", rating: 4.0 },
-                    { title: "Gran Turismo", type: "Esporte/Ação", rating: 3.0 },
-                    { title: "Guardiões da Galáxia vol. 1, 2 e 3", type: "Ficção/Ação", rating: 5.0 },
-                    { title: "Guerra do amanhã", type: "Ação/Ficção", rating: 3.5 },
-                    { title: "Guerra Mundial Z", type: "Ficção/Thriller", rating: 3.5 },
-                    { title: "Guerra sem regras", type: "Ação", rating: 3.5 },
-                    { title: "Harold e o Lápis Mágico", type: "Fantasia", rating: 3.5 },
-                    { title: "Hellboy e o homem torto", type: "Ficção/Ação", rating: 1.0 },
-                    { title: "Homem-aranha (Saga Sony)", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "Homem-aranha (Saga UCM)", type: "Ação/Ficção", rating: 5.0 },
-                    { title: "Homem-formiga (saga)", type: "Ação/Ficção", rating: 3.0 },
-                    { title: "I am mother", type: "Ficção/Drama", rating: 4.0 },
-                    { title: "Independence Day 1", type: "Ficção/Thriller", rating: 5.0 },
-                    { title: "Independence Day 2", type: "Ficção/Thriller", rating: 4.0 },
-                    { title: "Infiltrados na Klan", type: "Thriller/Drama", rating: 4.75 },
-                    { title: "Interestelar", type: "Ficção/Drama", rating: 4.5 },
-                    { title: "Irmãos", type: "Comédia/Crime", rating: 3.0 },
-                    { title: "Jogador número 1", type: "Ficção/Ação", rating: 4.0 },
-                    { title: "Jogos vorazes (saga)", type: "Ficção/Ação", rating: 5.0 },
-                    { title: "John Wick (saga)", type: "Ação/Thriller", rating: 5.0 },
-                    { title: "Jolt: Fúria fatal", type: "Ação/Comédia", rating: 3.0 },
-                    { title: "Jumanji (1995)", type: "Ficção/Thriller/Comédia", rating: 4.0 },
-                    { title: "Jumanji (2016 e 2019)", type: "Ficção/Thriller/Comédia", rating: 3.5 },
-                    { title: "Jungle Cruise", type: "Aventura/Fantasia", rating: 3.0 },
-                    { title: "Jurado n°2", type: "Thriller/Drama", rating: 3.5 },
-                    { title: "Karate Kid: Lendas", type: "Drama/Thriller", rating: 4.0 },
-                    { title: "Kill Bill (saga)", type: "Thriller/Ação", rating: 4.25 },
-                    { title: "King's man (saga)", type: "Ação/Ficção", rating: 4.5 },
-                    { title: "Ladrões", type: "Ação/Drama", rating: 4.5 },
-                    { title: "Ligação sombria", type: "Suspense/Thriller", rating: 3.0 },
-                    { title: "Liga da Justiça", type: "Ficção", rating: 3.75 },
-                    { title: "Linha de extinção", type: "Ação/Thriller", rating: 4.0 },
-                    { title: "Loteria Fatal", type: "Comédia/Ação", rating: 3.0 },
-                    { title: "Lucy", type: "Ficção/Thriller", rating: 2.5 },
-                    { title: "M3GAN (1 e 2)", type: "Ficção/Ação", rating: 4.5 },
-                    { title: "Madame Teia", type: "Ação/Ficção", rating: 1.0 },
-                    { title: "Madmax (todos)", type: "Ficção/Thriller/Ação", rating: 4.5 },
-                    { title: "Massa cinzenta", type: "Ficção/Thriller", rating: 2.5 },
-                    { title: "Matrix", type: "Ficção/Ação", rating: 5.0 },
-                    { title: "Max Steel", type: "Ação/Ficção", rating: 2.5 },
-                    { title: "Maze runner (saga)", type: "Ação/Thriller", rating: 4.0 },
-                    { title: "Megalópolis", type: "Ficção/Drama", rating: 1.0 },
-                    { title: "MIB: Homens de Preto (1,2 e 3)", type: "Ficção/Comédia", rating: 4.25 },
-                    { title: "MIB: Homens de Preto Internacional", type: "Ficção/Comédia", rating: 3.25 },
-                    { title: "Mickey 17", type: "Thriller/Ficção", rating: 4.25 },
-                    { title: "Missão impossível (saga)", type: "Ação/Thriller", rating: 5.0 },
-                    { title: "Moonfall", type: "Drama/Ficção", rating: 3.0 },
-                    { title: "Mortal Kombat", type: "Ação/Ficção", rating: 3.0 },
-                    { title: "Mr. Holland: adorável professor", type: "Drama/Musical", rating: 4.0 },
-                    { title: "Ms. Marvel", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "Mundo em caos", type: "Ficção/Thriller", rating: 3.5 },
-                    { title: "Não, não olhe!", type: "Ficção/Suspense", rating: 4.0 },
-                    { title: "Não olhe para cima", type: "Ficção/Drama", rating: 4.5 },
-                    { title: "Não se mexa", type: "Terror/Thriller", rating: 3.0 },
-                    { title: "Não solte nunca", type: "Suspense/Thriller", rating: 3.0 },
-                    { title: "Need for Speed", type: "Ação", rating: 3.0 },
-                    { title: "No limite do amanhã", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "Nosso Amigo Extraordinário", type: "Comédia/Drama", rating: 3.5 },
-                    { title: "Novocaína", type: "Ação/Comédia", rating: 4.0 },
-                    { title: "O agente secreto", type: "Thriller", rating: 4.5 },
-                    { title: "O astronauta", type: "Ficção/Drama", rating: 3.0 },
-                    { title: "O código Da Vinci", type: "Ficção/Thriller", rating: 4.5 },
-                    { title: "O Contador 1 e 2", type: "Ação", rating: 3.5 },
-                    { title: "O Despertar de uma paixão", type: "Drama", rating: 3.5 },
-                    { title: "O destino de Jupiter", type: "Ficção/Thriller", rating: 3.0 },
-                    { title: "O diabo de cada dia", type: "Drama", rating: 4.25 },
-                    { title: "O doador de memórias", type: "Ficção/Thriller", rating: 5.0 },
-                    { title: "O dublê", type: "Ação", rating: 3.0 },
-                    { title: "O esquadrão suicida", type: "Ficção", rating: 4.0 },
-                    { title: "O exterminador do futuro (saga)", type: "Ficção/Thriller", rating: 3.0 },
-                    { title: "O homem do Norte", type: "Ação/Drama", rating: 4.25 },
-                    { title: "O homem invisível", type: "Terror/Ficção", rating: 3.5 },
-                    { title: "O máscara", type: "Comédia", rating: 5.0 },
-                    { title: "O mundo depois de nós", type: "Ficção/Terror", rating: 3.5 },
-                    { title: "O poço 1 e 2", type: "Terror/Thriller", rating: 4.0 },
-                    { title: "O predador: a caçada", type: "Ficção/Suspense", rating: 4.0 },
-                    { title: "O predestinado", type: "Ficção/Thriller", rating: 3.5 },
-                    { title: "O protetor 1 e 2", type: "Ação", rating: 4.0 },
-                    { title: "O regresso", type: "Thriller/Drama", rating: 4.5 },
-                    { title: "O senhor das arma", type: "Thriller", rating: 3.5 },
-                    { title: "O senhor das armas", type: "Thriller", rating: 3.5 },
-                    { title: "O Senhor dos Anéis – Trilogia", type: "Ficção/Ação", rating: 5.0 },
-                    { title: "O sobrevivente", type: "Ação/Thriller", rating: 4.5 },
-                    { title: "O telefone preto 1 e 2", type: "Terror", rating: 4.5 },
-                    { title: "O Último Mestre do Ar", type: "Aventura/Ficção", rating: 3.5 },
-                    { title: "Onde está segunda?", type: "Ficção/Thriller", rating: 4.5 },
-                    { title: "Onze homens e um segredo", type: "Thriller", rating: 4.5 },
-                    { title: "Operação Natal", type: "Ação/Ficção", rating: 2.5 },
-                    { title: "Operação Vingança", type: "Thriller", rating: 4.25 },
-                    { title: "Oppenheimer", type: "Ficção/Drama", rating: 5.0 },
-                    { title: "Palm Springs", type: "Ficção/Drama", rating: 3.5 },
-                    { title: "Parasita", type: "Drama/Thriller", rating: 5.0 },
-                    { title: "Pecadores", type: "Thriller/Ficção", rating: 5.0 },
-                    { title: "Pisque duas vezes", type: "Suspense/Drama", rating: 4.0 },
-                    { title: "Pixels", type: "Fantasia/Aventura", rating: 5.0 },
-                    { title: "Planeta dos macacos (saga)", type: "Ficção/Ação", rating: 4.0 },
-                    { title: "Pobres Criaturas", type: "Drama/Ficção", rating: 5.0 },
-                    { title: "Polar", type: "Ação", rating: 3.0 },
-                    { title: "Ponto vermelho", type: "Suspense/Thriller", rating: 4.0 },
-                    { title: "Predestinado", type: "Ficção", rating: 3.5 },
-                    { title: "Premonição 6", type: "Suspense/Terror", rating: 4.5 },
-                    { title: "Projeto Adam", type: "Ação/Ficção", rating: 3.0 },
-                    { title: "Projeto Almanaque", type: "Ficção/Aventura", rating: 3.0 },
-                    { title: "Projeto Ithaca", type: "Ficção/Suspense", rating: 1.5 },
-                    { title: "Próxima parada: apocalipse", type: "Thriller/Suspense", rating: 1.0 },
-                    { title: "Psicopata americano", type: "Terror/Thriller", rating: 4.0 },
-                    { title: "Rampage", type: "Ficção/Thriller", rating: 3.0 },
-                    { title: "Rebel Moon (Saga)", type: "Ficção/Ação", rating: 3.0 },
-                    { title: "Renfield", type: "Terror/Comédia", rating: 4.0 },
-                    { title: "Resgate implacável", type: "Ação", rating: 2.0 },
-                    { title: "Resistência", type: "Ficção/Thriller", rating: 4.0 },
-                    { title: "Rick Stanicky", type: "Comédia", rating: 5.0 },
-                    { title: "Riddick (saga)", type: "Ação/Ficção", rating: 2.5 },
-                    { title: "Ruby Sparks", type: "Romance/Fantasia", rating: 4.0 },
-                    { title: "Saltburn", type: "Thriller/Comédia", rating: 4.25 },
-                    { title: "Scott Pilgrim", type: "Comédia/Thriller", rating: 4.5 },
-                    { title: "Se beber, não case", type: "Comédia", rating: 4.75 },
-                    { title: "Sementes podres", type: "Comédia/Drama", rating: 5.0 },
-                    { title: "Sempre em frente", type: "Drama", rating: 4.0 },
-                    { title: "Sete homens e um destino", type: "Thriller/Ação", rating: 3.0 },
-                    { title: "Shaft", type: "Ação/Thriller", rating: 4.0 },
-                    { title: "Shang-Chi", type: "Ficção/Ação", rating: 5.0 },
-                    { title: "Shazam!", type: "Ficção/Ação", rating: 3.0 },
-                    { title: "Sherlock holmes", type: "Ficção/Thriller", rating: 5.0 },
-                    { title: "Shrek (saga)", type: "Fantasia/Aventura", rating: 5.0 },
-                    { title: "Sonic (saga)", type: "Fantasia/Aventura", rating: 5.0 },
-                    { title: "Stargate", type: "Ficção/Thriller", rating: 4.0 },
-                    { title: "Superman", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "Take Me", type: "Comédia", rating: 5.0 },
-                    { title: "Tartarugas ninjas", type: "Aventura/Fantasia", rating: 5.0 },
-                    { title: "Tenet", type: "Ficção/Ação", rating: 2.0 },
-                    { title: "Terra à deriva", type: "Ficção/Ação", rating: 3.5 },
-                    { title: "The Batman", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "The Electric State", type: "Thriller/Ficção", rating: 3.0 },
-                    { title: "The Flash", type: "Ação/Ficção", rating: 3.0 },
-                    { title: "The Perfection", type: "Drama/Terror", rating: 3.0 },
-                    { title: "These final hours", type: "Drama/Thriller", rating: 4.5 },
-                    { title: "Thor (saga)", type: "Ação/Ficção", rating: 3.5 },
-                    { title: "Thunderbolts", type: "Ficção/Ação", rating: 4.8 },
-                    { title: "TOC TOC", type: "Comédia", rating: 5.0 },
-                    { title: "Transformers", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "Trem-bala", type: "Ação/Thriller", rating: 4.0 },
-                    { title: "Trocados", type: "Comédia/Fantasia", rating: 3.0 },
-                    { title: "Tróia", type: "Ação/Thriller", rating: 4.0 },
-                    { title: "Tropa de elite (1 e 2)", type: "Ação", rating: 4.5 },
-                    { title: "Truque de mestre (1, 2 e 3)", type: "Thriller", rating: 4.5 },
-                    { title: "Tudo em todo lugar ao mesmo tempo", type: "Ficção/Thriller", rating: 4.0 },
-                    { title: "Um contratempo", type: "Suspense/Thriller", rating: 4.5 },
-                    { title: "Um dia fora do controle", type: "Comédia/Ação", rating: 3.75 },
-                    { title: "Um golpe do destino", type: "Drama", rating: 4.5 },
-                    { title: "Um príncipe em nova york", type: "Comédia", rating: 4.25 },
-                    { title: "Uma noite de crimes", type: "Terror/Suspense", rating: 4.0 },
-                    { title: "Uncharted", type: "Ação/Aventura", rating: 3.0 },
-                    { title: "V de Vingança", type: "Ação/Ficção", rating: 5.0 },
-                    { title: "Valerian e a cidade dos mil planetas", type: "Ficção/Thriller", rating: 2.25 },
-                    { title: "Velocipastor", type: "Terror/Comédia", rating: 1.0 },
-                    { title: "Viagem de risco", type: "Ação/Thriller", rating: 3.5 },
-                    { title: "Viúva Negra", type: "Ação/Ficção", rating: 4.0 },
-                    { title: "Wicked", type: "Ficção/Fantasia", rating: 3.5 },
-                    { title: "Wit - uma lição de vida", type: "Drama", rating: 5.0 },
-                    { title: "Zona de Combate", type: "Ficção/Ação", rating: 3.5 }
-        ];
-
-        const initialSeries = [
-            { title: "3%", type: "Ficção", rating: 4.0 },
-            { title: "A casa dragão", type: "Ficção/Drama", rating: 5.0 },
-            { title: "Agatha desde sempre", type: "Ficção/Fantasia", rating: 3.5 },
-            { title: "Ahsoka", type: "Ficção", rating: 4.0 },
-            { title: "Alice in Borderland", type: "Ficção/Thriller", rating: 5.0 },
-            { title: "Altered Carbon", type: "Ficção Científica", rating: 3.5 },
-            { title: "Arrow", type: "Ficção/Ação", rating: 4.0 },
-            { title: "Avenue 5", type: "Comédia/Ficção", rating: 3.0 },
-            { title: "Black lightning", type: "Ficção/Ação", rating: 3.5 },
-            { title: "Breaking Bad", type: "Drama", rating: 5.0 },
-            { title: "Cavaleiro da lua", type: "Ficção", rating: 4.0 },
-            { title: "Citadel", type: "Ação/Thriller", rating: 4.4 },
-            { title: "Cobra Kai", type: "Ação/Comédia/Drama", rating: 5.0 },
-            { title: "Criando Dion", type: "Ficção", rating: 5.0 },
-            { title: "Dark", type: "Ficção", rating: 5.0 },
-            { title: "Dark Matter", type: "Ficção Científica", rating: 3.5 },
-            { title: "Dia Zero", type: "Thriller", rating: 4.5 },
-            { title: "Doom Patrol", type: "Ficção", rating: 3.5 },
-            { title: "Duna: profecia", type: "Ficção/Drama", rating: 5.0 },
-            { title: "Echo", type: "Ação/Ficção", rating: 3.5 },
-            { title: "Eu sou Groot", type: "Ficção", rating: 3.0 },
-            { title: "Falcão e o Soldado Invernal", type: "Ficção", rating: 3.5 },
-            { title: "Flash", type: "Ficção", rating: 2.0 },
-            { title: "Fringe", type: "Ficção", rating: 4.0 },
-            { title: "Fundação", type: "Ficção", rating: 4.25 },
-            { title: "Game of Thrones", type: "Drama/Ação", rating: 4.25 },
-            { title: "Gavião arqueiro", type: "Ficção", rating: 4.0 },
-            { title: "Gen V", type: "Ficção", rating: 5.0 },
-            { title: "Gotham", type: "Ficção", rating: 4.25 },
-            { title: "Halo", type: "Ficção", rating: 4.5 },
-            { title: "Heroes", type: "Ficção", rating: 3.75 },
-            { title: "His Dark Materials", type: "Ficção", rating: 2.0 },
-            { title: "Iluminadas", type: "Ficção", rating: 4.0 },
-            { title: "Inumanos", type: "Ficção", rating: 1.5 },
-            { title: "Invasão Secreta", type: "Ficção", rating: 4.25 },
-            { title: "Invasion", type: "Ficção", rating: 4.5 },
-            { title: "Irmandade", type: "Drama/Criminal", rating: 4.0 },
-            { title: "Kenobi", type: "Ficção", rating: 5.0 },
-            { title: "La casa de papel", type: "Drama/Criminal", rating: 5.0 },
-            { title: "Legacies", type: "Ficção", rating: 3.0 },
-            { title: "Legião", type: "Ficção", rating: 4.5 },
-            { title: "Lendas do amanhã", type: "Ficção", rating: 2.75 },
-            { title: "Loki", type: "Ficção", rating: 5.0 },
-            { title: "Love, Death and Robots", type: "Ficção", rating: 4.5 },
-            { title: "LoveCraft Country", type: "Ficção/Drama", rating: 4.5 },
-            { title: "Lucifer", type: "Ficção", rating: 5.0 },
-            { title: "MacGyver", type: "Ação", rating: 3.0 },
-            { title: "Manifest – Voo 828", type: "Ficção", rating: 2.5 },
-            { title: "Máquina mortífera", type: "Ação/Policial", rating: 3.5 },
-            { title: "Merli", type: "Drama", rating: 5.0 },
-            { title: "Monarchy: Legacy of Monsters", type: "Ficção/Thriller", rating: 5.0 },
-            { title: "O continental", type: "Ação/Thriller", rating: 5.0 },
-            { title: "O doutrinador", type: "Ação/Drama", rating: 3.5 },
-            { title: "O problema dos 3 corpos", type: "Ficção", rating: 5.0 },
-            { title: "O recruta", type: "Thriller", rating: 4.4 },
-            { title: "Origem (From)", type: "Terror/Suspense", rating: 5.0 },
-            { title: "Ozark", type: "Drama/Criminal", rating: 5.0 },
-            { title: "Perdidos no espaço", type: "Ficção", rating: 4.5 },
-            { title: "Pinguim", type: "Ficção/Drama", rating: 4.25 },
-            { title: "Preacher", type: "Ficção/Comédia", rating: 5.0 },
-            { title: "Prison Break", type: "Thriller/Criminal", rating: 4.75 },
-            { title: "Ragnarok", type: "Ficção", rating: 3.0 },
-            { title: "Ray Donovan", type: "Drama/Thriller/Crime", rating: 5.0 },
-            { title: "Reacher", type: "Ação/Thriller", rating: 4.75 },
-            { title: "Resident Alien", type: "Comédia/Ficção", rating: 4.75 },
-            { title: "Revenge", type: "Drama", rating: 4.5 },
-            { title: "Round 6", type: "Drama/Terror", rating: 5.0 },
-            { title: "Ruptura", type: "Ficção/Suspense", rating: 4.75 },
-            { title: "See", type: "Drama/Ação", rating: 4.75 },
-            { title: "She-Hulk", type: "Ficção/Ação", rating: 3.0 },
-            { title: "Sherlock", type: "Thriller/Comédia", rating: 4.0 },
-            { title: "Silo", type: "Ficção", rating: 5.0 },
-            { title: "Star Wars – Andor", type: "Ficção/Ação", rating: 3.75 },
-            { title: "Star Wars: The Mandalorian", type: "Ficção/Ação", rating: 4.5 },
-            { title: "Stranger Things", type: "Ficção/Terror", rating: 5.0 },
-            { title: "Supacell", type: "Ficção/Drama", rating: 4.0 },
-            { title: "Supergirl", type: "Ficção", rating: 2.5 },
-            { title: "Sweet Tooth", type: "Ficção", rating: 2.0 },
-            { title: "The 100", type: "Ficção/Drama", rating: 4.0 },
-            { title: "The Boys", type: "Ficção/Thriller", rating: 5.0 },
-            { title: "The end of the fucking world", type: "Drama/Comédia/Crime", rating: 4.5 },
-            { title: "The Expanse", type: "Ficção", rating: 4.5 },
-            { title: "The handmaid’s Tale", type: "Ficção/Drama", rating: 5.0 },
-            { title: "The Last of Us", type: "Ficção", rating: 5.0 },
-            { title: "The Mandalorian", type: "Ação/Ficção", rating: 5.0 },
-            { title: "The outsider", type: "Ficção/Thriller", rating: 4.75 },
-            { title: "The Rain", type: "Ficção/Drama", rating: 3.0 },
-            { title: "The Umbrella Academy", type: "Ficção", rating: 3.0 },
-            { title: "The Witcher", type: "Ficção", rating: 4.0 },
-            { title: "Titans", type: "Ficção/Ação", rating: 3.5 },
-            { title: "Twisted Metal", type: "Ação/Comédia", rating: 4.5 },
-            { title: "Vikings (saga)", type: "Ação", rating: 5.0 },
-            { title: "WandaVision", type: "Ficção", rating: 4.5 },
-            { title: "Warrior Nun", type: "Ação/Thriller", rating: 3.5 },
-            { title: "Westworld", type: "Ficção/Drama", rating: 4.5 },
-            { title: "Years and Years", type: "Thriller/Drama", rating: 4.75 }
-        ];
-
-        // --- LISTA DE ANIMAÇÕES ---
-        const initialAnimations = [
-            { title: "Invencível", type: "Ação", rating: 5.0 },
-            { title: "O gato de botas 2", type: "Aventura", rating: 5.0 },
-            { title: "Procurando Nemo", type: "Aventura", rating: 5.0 },
-            { title: "Soul", type: "Drama", rating: 5.0 },
-            { title: "Super Mario Bros", type: "Comédia", rating: 5.0 },
-            { title: "X-men 97", type: "Ação/Ficção", rating: 5.0 }
-        ];
-
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        // --- MOTOR TMDB ---
+        // Funções de Busca Poster
         async function getPoster(title, type) {
             const cat = (type === 'series') ? 'tv' : 'movie';
             const clean = title.split('(')[0].split('–')[0].trim();
@@ -808,32 +374,10 @@
                 const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(clean)}&language=pt-BR`);
                 const d = await r.json();
                 return d.results && d.results[0] ? `https://image.tmdb.org/t/p/w500${d.results[0].poster_path}` : "";
-            } catch (err) {
-                console.error("Erro na busca do poster:", err);
-                return "";
-            }
+            } catch (err) { return ""; }
         }
 
-        // --- FUNÇÕES DE INTERFACE ---
-        window.openModal = () => document.getElementById('modal').style.display = 'flex';
-        window.closeModal = () => document.getElementById('modal').style.display = 'none';
-
-        window.fetchFromFirebase = async () => {
-            try {
-                const s = await getDocs(collection(db, currentTab));
-                const l = [];
-                s.forEach(d => l.push({ fireId: d.id, ...d.data() }));
-                dataStore[currentTab] = l;
-                
-                // Botão de migração aparece se houver poucos itens (ex: banco zerado)
-                document.getElementById('migrationBtn').style.display = (l.length < 5) ? 'inline-block' : 'none';
-                renderData();
-            } catch (e) {
-                console.error(e);
-                document.getElementById('stats').innerText = "Erro ao conectar. Verifique as chaves e as regras do Firebase.";
-            }
-        };
-
+        // --- RENDERIZAÇÃO (AQUI ESTÁ A MUDANÇA) ---
         function renderData(filterData = null) {
             const sorted = [...dataStore[currentTab]].sort((a,b) => a.title.localeCompare(b.title));
             const d = filterData || sorted;
@@ -843,6 +387,9 @@
             
             d.forEach(item => {
                 const p = (item.rating/5)*100;
+                // Verificamos se existe o review para criar a Div dele
+                const reviewHtml = item.review ? `<div class="movie-review" title="${item.review}">"${item.review}"</div>` : '';
+
                 g.innerHTML += `
                 <div class="movie-card">
                     <button class="btn-delete" onclick="window.deleteItem('${item.fireId}')"><i class="fas fa-trash"></i></button>
@@ -857,45 +404,30 @@
                                 <div class="stars-outer">★★★★★<div class="stars-inner" style="width:${p}%">★★★★★</div></div>
                                 <span class="rating-number">${item.rating}</span>
                             </div>
+                            ${reviewHtml} 
                         </div>
                     </div>
                 </div>`;
             });
         }
 
-        window.migrateToFirebase = async () => {
-            if(!confirm("Deseja enviar TODAS as listas iniciais (incluindo a nova lista de filmes) para a nuvem?")) return;
-            document.getElementById('stats').innerText = "Iniciando migração em massa...";
-            try {
-                const lists = { 'filmes': initialMovies, 'series': initialSeries, 'animacoes': initialAnimations };
-                for (let tab in lists) {
-                    document.getElementById('stats').innerText = `Migrando ${tab}...`;
-                    for (let item of lists[tab]) {
-                        await addDoc(collection(db, tab), { ...item, imageUrl: "", review: "" });
-                    }
-                }
-                alert("Migração concluída com sucesso!");
-                location.reload();
-            } catch (e) {
-                alert("Erro na migração: " + e.message);
-            }
+        // Funções de Janela / Modal
+        window.openModal = () => document.getElementById('modal').style.display = 'flex';
+        window.closeModal = () => {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('newTitle').value = '';
+            document.getElementById('newReview').value = '';
         };
 
-        window.updateAllPosters = async () => {
-            const s = await getDocs(collection(db, currentTab));
-            let i = 0;
-            for (let dSnap of s.docs) {
-                i++;
-                const item = dSnap.data();
-                if (!item.imageUrl) {
-                    document.getElementById('stats').innerText = `Buscando poster: ${i}/${s.size}`;
-                    const img = await getPoster(item.title, currentTab);
-                    if (img) await updateDoc(doc(db, currentTab, dSnap.id), { imageUrl: img });
-                    await new Promise(r => setTimeout(r, 250));
-                }
-            }
-            alert("Processo de atualização finalizado!");
-            location.reload();
+        window.fetchFromFirebase = async () => {
+            try {
+                const s = await getDocs(collection(db, currentTab));
+                const l = [];
+                s.forEach(d => l.push({ fireId: d.id, ...d.data() }));
+                dataStore[currentTab] = l;
+                document.getElementById('migrationBtn').style.display = (l.length < 5) ? 'inline-block' : 'none';
+                renderData();
+            } catch (e) { document.getElementById('stats').innerText = "Erro ao conectar."; }
         };
 
         window.saveEntry = async () => {
@@ -905,15 +437,11 @@
             const review = document.getElementById('newReview').value;
             
             if(title && type && !isNaN(rating)) {
-                document.getElementById('stats').innerText = "Salvando nova obra...";
-                try {
-                    const img = await getPoster(title, currentTab);
-                    await addDoc(collection(db, currentTab), { title, type, rating, imageUrl: img, review });
-                    window.closeModal();
-                    await fetchFromFirebase();
-                } catch (e) {
-                    alert("Erro ao salvar: " + e.message);
-                }
+                document.getElementById('stats').innerText = "Salvando...";
+                const img = await getPoster(title, currentTab);
+                await addDoc(collection(db, currentTab), { title, type, rating, imageUrl: img, review: review });
+                window.closeModal();
+                await fetchFromFirebase();
             }
         };
 
@@ -925,7 +453,7 @@
         };
 
         window.deleteItem = async (id) => {
-            if(confirm("Deseja excluir esta obra permanentemente da nuvem?")) {
+            if(confirm("Excluir?")) {
                 await deleteDoc(doc(db, currentTab, id));
                 await fetchFromFirebase();
             }
@@ -937,9 +465,7 @@
             renderData(filtered);
         };
 
-        // Início automático
         fetchFromFirebase();
     </script>
 </body>
 </html>
-
