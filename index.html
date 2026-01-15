@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha Lista - Sistema Cloud Otimizado</title>
+    <title>Minha Lista - Sistema Cloud Premium</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -89,13 +89,12 @@
         }
 
         #searchInput { flex: 2; min-width: 200px; }
-        #typeFilter, #ratingFilter { flex: 1; min-width: 120px; }
+        #typeFilter, #ratingFilter { flex: 1; min-width: 150px; }
 
         .admin-controls { display: flex; gap: 10px; }
         #migrationBtn, #tmdbUpdateBtn { padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; color: white; }
         #migrationBtn { background: #f39c12; }
         #tmdbUpdateBtn { background: #3498db; }
-
         .btn-add { background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
         main { padding: 0 4% 50px 4%; }
@@ -159,8 +158,10 @@
             .movie-poster-container { height: 220px; }
         }
 
-        /* BLOQUEIO TEMPORÁRIO (Descomente se necessário) */
-        #migrationBtn, #tmdbUpdateBtn, .btn-add, .btn-delete { display: none !important; }
+        /* BLOQUEIO DE ADMINISTRAÇÃO */
+        #migrationBtn, #tmdbUpdateBtn, .btn-add, .btn-delete { 
+            display: none !important; 
+        }
     </style>
 </head>
 <body>
@@ -176,19 +177,25 @@
             <button class="btn-add" onclick="window.openModal()">+ ADICIONAR</button>
         </div>
         <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="Pesquisar título..." oninput="window.applyFilters()">
+            <input type="text" id="searchInput" placeholder="Pesquisar..." oninput="window.applyFilters()">
             
             <select id="typeFilter" onchange="window.applyFilters()">
                 <option value="">Todos os Tipos</option>
             </select>
 
             <select id="ratingFilter" onchange="window.applyFilters()">
-                <option value="0">Todas as Notas</option>
-                <option value="5">Nota 5 (Perfeito)</option>
-                <option value="4">4.0 a 4.9</option>
-                <option value="3">3.0 a 3.9</option>
-                <option value="2">2.0 a 2.9</option>
-                <option value="1">1.0 a 1.9</option>
+                <option value="0">Todas as Classificações</option>
+                <optgroup label="Ordenar por classificação">
+                    <option value="high-low">Ordem decrescente (5-1)</option>
+                    <option value="low-high">Ordem crescente (1-5)</option>
+                </optgroup>
+                <optgroup label="Filtrar por Estrelas">
+                    <option value="5">Nota 5</option>
+                    <option value="4">4.0</option>
+                    <option value="3">3.0</option>
+                    <option value="2">2.0</option>
+                    <option value="1">1.0</option>
+                </optgroup>
             </select>
 
             <div class="admin-controls">
@@ -202,7 +209,7 @@
         <div class="modal-content">
             <h2 style="color: var(--netflix-red); margin: 0;">Nova Obra</h2>
             <input type="text" id="newTitle" placeholder="Título">
-            <input type="text" id="newType" placeholder="Tipo (Ex: Ação/Thriller)">
+            <input type="text" id="newType" placeholder="Tipo (Ex: Ação/Ficção)">
             <input type="number" id="newRating" placeholder="Nota" step="0.25">
             <textarea id="newReview" placeholder="Seu relato..." rows="4"></textarea>
             <div style="display:flex; gap:10px;">
@@ -237,66 +244,29 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        // --- ATUALIZAR DROPDOWN DE TIPOS ---
-        function updateTypeDropdown() {
-            const typeSelect = document.getElementById('typeFilter');
-            const allTypes = new Set();
-            dataStore[currentTab].forEach(item => {
-                if (item.type) item.type.split('/').forEach(t => allTypes.add(t.trim()));
-            });
-            const sortedTypes = Array.from(allTypes).sort();
-            typeSelect.innerHTML = '<option value="">Todos os Tipos</option>';
-            sortedTypes.forEach(t => { typeSelect.innerHTML += `<option value="${t}">${t}</option>`; });
-        }
+        // --- RENDERIZAÇÃO COM MULTI-LEVEL SORT (NOTA + ALFABÉTICA) ---
+        function renderData(filterData = null, sortType = 'alpha') {
+            let itemsToRender = filterData ? [...filterData] : [...dataStore[currentTab]];
 
-        // --- LÓGICA DE FILTRAGEM (ATUALIZADA) ---
-        window.applyFilters = () => {
-            const searchText = document.getElementById('searchInput').value.toLowerCase();
-            const selectedType = document.getElementById('typeFilter').value;
-            const ratingBase = parseFloat(document.getElementById('ratingFilter').value);
-
-            const filtered = dataStore[currentTab].filter(item => {
-                const matchesSearch = item.title.toLowerCase().includes(searchText);
-                
-                // Nova Lógica de Estrelas:
-                let matchesRating = true;
-                if (ratingBase > 0) {
-                    if (ratingBase === 5) {
-                        matchesRating = item.rating === 5;
-                    } else {
-                        // Verifica se está entre o número (ex: 3) e o próximo (ex: 4)
-                        matchesRating = item.rating >= ratingBase && item.rating < (ratingBase + 1);
-                    }
+            // Lógica de Ordenação
+            itemsToRender.sort((a, b) => {
+                if (sortType === 'high-low') {
+                    // Se notas forem iguais, desempata pelo título (A-Z)
+                    return (b.rating - a.rating) || a.title.localeCompare(b.title);
+                } else if (sortType === 'low-high') {
+                    // Se notas forem iguais, desempata pelo título (A-Z)
+                    return (a.rating - b.rating) || a.title.localeCompare(b.title);
+                } else {
+                    // Ordenação Padrão: Apenas Alfabética
+                    return a.title.localeCompare(b.title);
                 }
-                
-                let matchesType = selectedType === "" || (item.type && item.type.split('/').map(t => t.trim()).includes(selectedType));
-                
-                return matchesSearch && matchesRating && matchesType;
             });
 
-            renderData(filtered);
-        };
-
-        // --- MOTOR DE POSTERS ---
-        async function getPoster(title, type) {
-            const cat = (type === 'series') ? 'tv' : 'movie';
-            const clean = title.split('(')[0].split('–')[0].trim();
-            try {
-                const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(clean)}&language=pt-BR`);
-                const d = await r.json();
-                return d.results && d.results[0] ? `https://image.tmdb.org/t/p/w500${d.results[0].poster_path}` : "";
-            } catch (err) { return ""; }
-        }
-
-        // --- RENDERIZAÇÃO BATCH ---
-        function renderData(filterData = null) {
-            const sorted = [...dataStore[currentTab]].sort((a,b) => a.title.localeCompare(b.title));
-            const d = filterData || sorted;
             const g = document.getElementById('movie-grid');
             const htmlBuffer = [];
-            document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${d.length} obras)`;
+            document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${itemsToRender.length} obras)`;
             
-            d.forEach(item => {
+            itemsToRender.forEach(item => {
                 const p = (item.rating/5)*100;
                 const reviewHtml = item.review ? `<div class="movie-review">"${item.review}"</div>` : '';
                 htmlBuffer.push(`
@@ -322,6 +292,45 @@
             g.innerHTML = htmlBuffer.join('');
         }
 
+        window.applyFilters = () => {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const selectedType = document.getElementById('typeFilter').value;
+            const ratingValue = document.getElementById('ratingFilter').value;
+
+            let sortMode = 'alpha';
+            let ratingBase = 0;
+
+            if (ratingValue === 'high-low' || ratingValue === 'low-high') {
+                sortMode = ratingValue;
+            } else {
+                ratingBase = parseFloat(ratingValue);
+            }
+
+            const filtered = dataStore[currentTab].filter(item => {
+                const matchesSearch = item.title.toLowerCase().includes(searchText);
+                let matchesRating = true;
+                if (ratingBase > 0) {
+                    matchesRating = (ratingBase === 5) ? (item.rating === 5) : (item.rating >= ratingBase && item.rating < (ratingBase + 1));
+                }
+                let matchesType = selectedType === "" || (item.type && item.type.split('/').map(t => t.trim()).includes(selectedType));
+                return matchesSearch && matchesRating && matchesType;
+            });
+
+            renderData(filtered, sortMode);
+        };
+
+        // --- ATUALIZAR FILTROS ---
+        function updateTypeDropdown() {
+            const typeSelect = document.getElementById('typeFilter');
+            const allTypes = new Set();
+            dataStore[currentTab].forEach(item => {
+                if (item.type) item.type.split('/').forEach(t => allTypes.add(t.trim()));
+            });
+            const sortedTypes = Array.from(allTypes).sort();
+            typeSelect.innerHTML = '<option value="">Todos os Tipos</option>';
+            sortedTypes.forEach(t => { typeSelect.innerHTML += `<option value="${t}">${t}</option>`; });
+        }
+
         window.fetchFromFirebase = async () => {
             try {
                 const s = await getDocs(collection(db, currentTab));
@@ -332,6 +341,25 @@
                 renderData();
             } catch (e) { document.getElementById('stats').innerText = "Erro ao carregar."; }
         };
+
+        window.switchTab = async (t, e) => {
+            currentTab = t;
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            e.classList.add('active');
+            document.getElementById('searchInput').value = "";
+            document.getElementById('ratingFilter').value = "0";
+            await fetchFromFirebase();
+        };
+
+        async function getPoster(title, type) {
+            const cat = (type === 'series') ? 'tv' : 'movie';
+            const clean = title.split('(')[0].split('–')[0].trim();
+            try {
+                const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(clean)}&language=pt-BR`);
+                const d = await r.json();
+                return d.results && d.results[0] ? `https://image.tmdb.org/t/p/w500${d.results[0].poster_path}` : "";
+            } catch (err) { return ""; }
+        }
 
         window.saveEntry = async () => {
             const title = document.getElementById('newTitle').value;
@@ -344,15 +372,6 @@
                 await addDoc(collection(db, currentTab), { title, type, rating, imageUrl: img, review: review });
                 window.closeModal(); await fetchFromFirebase();
             }
-        };
-
-        window.switchTab = async (t, e) => {
-            currentTab = t;
-            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-            e.classList.add('active');
-            document.getElementById('searchInput').value = "";
-            document.getElementById('ratingFilter').value = "0";
-            await fetchFromFirebase();
         };
 
         window.deleteItem = async (id) => {
