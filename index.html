@@ -75,43 +75,38 @@
             padding: 15px;
             border-radius: 8px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
-        .filter-bar input {
+        .filter-bar input, .filter-bar select {
             background: #333;
             border: 1px solid #555;
             color: white;
-            padding: 12px;
+            padding: 10px;
             border-radius: 4px;
             outline: none;
-            font-size: 1rem;
-            flex: 2;
+            font-size: 0.9rem;
         }
+
+        #searchInput { flex: 2; min-width: 200px; }
+        #typeFilter, #ratingFilter { flex: 1; min-width: 120px; }
 
         .admin-controls {
             display: flex;
             gap: 10px;
         }
 
-        #migrationBtn {
-            background: #f39c12;
-            color: #fff;
-            border: none;
+        #migrationBtn, #tmdbUpdateBtn {
             padding: 10px 15px;
             border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
+            border: none;
+            color: white;
         }
 
-        #tmdbUpdateBtn {
-            background: #3498db;
-            color: #fff;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        #migrationBtn { background: #f39c12; }
+        #tmdbUpdateBtn { background: #3498db; }
 
         .btn-add {
             background: #fff;
@@ -129,7 +124,7 @@
 
         .movie-grid {
             display: grid;
-            /* AJUSTADO: Reduzido em 30% (de 288px para 210px) */
+            /* Dimensão reduzida em 30% conforme solicitado */
             grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
             gap: 25px;
         }
@@ -139,8 +134,7 @@
             border-radius: 8px;
             overflow: hidden;
             position: relative;
-            /* AJUSTADO: Reduzido em 30% (de 640px para 480px) */
-            min-height: 480px;
+            min-height: 480px; 
             display: flex;
             flex-direction: column;
             transition: transform 0.2s;
@@ -153,15 +147,13 @@
 
         .movie-poster-container {
             width: 100%;
-            /* AJUSTADO: Reduzido em 30% (de 416px para 310px) */
             height: 310px;
             background: #333;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #555;
-            /* AJUSTADO: Ícone proporcionalmente menor */
-            font-size: 3rem; 
+            font-size: 3rem;
         }
 
         .movie-poster {
@@ -224,7 +216,6 @@
             font-size: 0.9rem;
         }
 
-        /* ESTILO DO REVIEW SEM CORTES */
         .movie-review {
             font-size: 0.85rem;
             color: #ccc;
@@ -233,7 +224,6 @@
             padding-top: 10px;
             margin-top: 5px;
             line-height: 1.4;
-            /* Mantido sem cortes para ler tudo */
             word-wrap: break-word;
         }
 
@@ -260,13 +250,9 @@
             display: none;
             position: fixed;
             z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
+            left: 0; top: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9);
-            justify-content: center;
-            align-items: center;
+            justify-content: center; align-items: center;
         }
 
         .modal-content {
@@ -288,19 +274,17 @@
             border-radius: 4px;
         }
 
-        /* --- AJUSTES PARA DISPOSITIVOS MÓVEIS --- */
+        /* --- AJUSTES RESPONSIVOS --- */
         @media (max-width: 768px) {
-            body { padding-top: 180px; }
+            body { padding-top: 210px; }
             header { padding: 15px 4%; }
-            .header-main { flex-direction: column; gap: 15px; }
-            nav { width: 100%; justify-content: space-between; }
-            /* Ajuste no mobile também para ficar proporcional */
-            .movie-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
-            .movie-card { min-height: 450px; }
-            .movie-poster-container { height: 300px; }
+            .header-main { flex-direction: column; gap: 10px; }
+            .movie-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+            .movie-card { min-height: 380px; }
+            .movie-poster-container { height: 220px; }
         }
 
-        /* BLOQUEIO TEMPORÁRIO DE ADMINISTRAÇÃO (Opcional) */
+        /* BLOQUEIO TEMPORÁRIO DE ADMINISTRAÇÃO (Descomente para esconder) */
         #migrationBtn, #tmdbUpdateBtn, .btn-add, .btn-delete {
             display: none !important;
         }
@@ -320,9 +304,19 @@
         </div>
         <div class="filter-bar">
             <input type="text" id="searchInput" placeholder="Pesquisar título..." oninput="window.applyFilters()">
+            <select id="typeFilter" onchange="window.applyFilters()">
+                <option value="">Todos os Tipos</option>
+            </select>
+            <select id="ratingFilter" onchange="window.applyFilters()">
+                <option value="0">Todas as Notas</option>
+                <option value="5">5 Estrelas</option>
+                <option value="4">4+ Estrelas</option>
+                <option value="3">3+ Estrelas</option>
+                <option value="2">2+ Estrelas</option>
+            </select>
             <div class="admin-controls">
-                <button id="migrationBtn" onclick="window.migrateToFirebase()">MIGRAR TUDO (LISTA NOVA)</button>
-                <button id="tmdbUpdateBtn" onclick="window.updateAllPosters()">BUSCAR POSTERS</button>
+                <button id="migrationBtn" onclick="window.migrateToFirebase()">MIGRAR</button>
+                <button id="tmdbUpdateBtn" onclick="window.updateAllPosters()">POSTERS</button>
             </div>
         </div>
     </header>
@@ -331,7 +325,7 @@
         <div class="modal-content">
             <h2 style="color: var(--netflix-red); margin: 0;">Nova Obra</h2>
             <input type="text" id="newTitle" placeholder="Título">
-            <input type="text" id="newType" placeholder="Tipo (Ex: Ficção)">
+            <input type="text" id="newType" placeholder="Tipo (Ex: Ação/Ficção)">
             <input type="number" id="newRating" placeholder="Nota" step="0.25">
             <textarea id="newReview" placeholder="Seu relato..." rows="4"></textarea>
             <div style="display:flex; gap:10px;">
@@ -350,6 +344,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // --- CONFIGURAÇÕES ---
         const firebaseConfig = {
             apiKey: "AIzaSyD4QIzbdBZB8IUloK6KPlMrBZ83BTYzc9Q",
             authDomain: "listaaudiovisual.firebaseapp.com",
@@ -366,6 +361,7 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
+        // --- MOTOR TMDB ---
         async function getPoster(title, type) {
             const cat = (type === 'series') ? 'tv' : 'movie';
             const clean = title.split('(')[0].split('–')[0].trim();
@@ -376,54 +372,80 @@
             } catch (err) { return ""; }
         }
 
+        // --- RENDERIZAÇÃO OTIMIZADA (BATCH) ---
         function renderData(filterData = null) {
             const sorted = [...dataStore[currentTab]].sort((a,b) => a.title.localeCompare(b.title));
             const d = filterData || sorted;
             const g = document.getElementById('movie-grid');
-            g.innerHTML = '';
+            
+            // Usamos um array (buffer) para evitar reflows excessivos do navegador
+            const htmlBuffer = [];
             document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${d.length} obras)`;
             
             d.forEach(item => {
                 const p = (item.rating/5)*100;
                 const reviewHtml = item.review ? `<div class="movie-review">"${item.review}"</div>` : '';
 
-                g.innerHTML += `
-                <div class="movie-card">
-                    <button class="btn-delete" onclick="window.deleteItem('${item.fireId}')"><i class="fas fa-trash"></i></button>
-                    <div class="movie-poster-container">
-                        ${item.imageUrl ? `<img src="${item.imageUrl}" class="movie-poster">` : `<i class="fas fa-film"></i>`}
-                    </div>
-                    <div class="movie-info">
-                        <div>
-                            <div class="tag">${item.type}</div>
-                            <div class="movie-title">${item.title}</div>
-                            <div class="star-rating">
-                                <div class="stars-outer">★★★★★<div class="stars-inner" style="width:${p}%">★★★★★</div></div>
-                                <span class="rating-number">${item.rating}</span>
+                htmlBuffer.push(`
+                    <div class="movie-card">
+                        <button class="btn-delete" onclick="window.deleteItem('${item.fireId}')"><i class="fas fa-trash"></i></button>
+                        <div class="movie-poster-container">
+                            ${item.imageUrl ? `<img src="${item.imageUrl}" class="movie-poster" loading="lazy">` : `<i class="fas fa-film"></i>`}
+                        </div>
+                        <div class="movie-info">
+                            <div>
+                                <div class="tag">${item.type}</div>
+                                <div class="movie-title">${item.title}</div>
+                                <div class="star-rating">
+                                    <div class="stars-outer">★★★★★<div class="stars-inner" style="width:${p}%">★★★★★</div></div>
+                                    <span class="rating-number">${item.rating}</span>
+                                </div>
+                                ${reviewHtml}
                             </div>
-                            ${reviewHtml}
                         </div>
                     </div>
-                </div>`;
+                `);
             });
+            // Injeção única no DOM
+            g.innerHTML = htmlBuffer.join('');
         }
 
-        window.openModal = () => document.getElementById('modal').style.display = 'flex';
-        window.closeModal = () => {
-            document.getElementById('modal').style.display = 'none';
-            document.getElementById('newTitle').value = '';
-            document.getElementById('newReview').value = '';
+        // --- FILTROS ---
+        function updateTypeDropdown() {
+            const typeSelect = document.getElementById('typeFilter');
+            const allTypes = new Set();
+            dataStore[currentTab].forEach(item => {
+                if (item.type) item.type.split('/').forEach(t => allTypes.add(t.trim()));
+            });
+            const sortedTypes = Array.from(allTypes).sort();
+            typeSelect.innerHTML = '<option value="">Todos os Tipos</option>';
+            sortedTypes.forEach(t => { typeSelect.innerHTML += `<option value="${t}">${t}</option>`; });
+        }
+
+        window.applyFilters = () => {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const selectedType = document.getElementById('typeFilter').value;
+            const minRating = parseFloat(document.getElementById('ratingFilter').value);
+
+            const filtered = dataStore[currentTab].filter(item => {
+                const matchesSearch = item.title.toLowerCase().includes(searchText);
+                const matchesRating = item.rating >= minRating;
+                let matchesType = selectedType === "" || (item.type && item.type.split('/').map(t => t.trim()).includes(selectedType));
+                return matchesSearch && matchesRating && matchesType;
+            });
+            renderData(filtered);
         };
 
+        // --- FUNÇÕES FIREBASE ---
         window.fetchFromFirebase = async () => {
             try {
                 const s = await getDocs(collection(db, currentTab));
                 const l = [];
                 s.forEach(d => l.push({ fireId: d.id, ...d.data() }));
                 dataStore[currentTab] = l;
-                document.getElementById('migrationBtn').style.display = (l.length < 5) ? 'inline-block' : 'none';
+                updateTypeDropdown();
                 renderData();
-            } catch (e) { document.getElementById('stats').innerText = "Erro ao conectar."; }
+            } catch (e) { document.getElementById('stats').innerText = "Erro ao carregar."; }
         };
 
         window.saveEntry = async () => {
@@ -431,7 +453,6 @@
             const type = document.getElementById('newType').value;
             const rating = parseFloat(document.getElementById('newRating').value);
             const review = document.getElementById('newReview').value;
-            
             if(title && type && !isNaN(rating)) {
                 document.getElementById('stats').innerText = "Salvando...";
                 const img = await getPoster(title, currentTab);
@@ -445,6 +466,8 @@
             currentTab = t;
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
             e.classList.add('active');
+            document.getElementById('searchInput').value = "";
+            document.getElementById('ratingFilter').value = "0";
             await fetchFromFirebase();
         };
 
@@ -455,11 +478,8 @@
             }
         };
 
-        window.applyFilters = () => {
-            const t = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = dataStore[currentTab].filter(i => i.title.toLowerCase().includes(t));
-            renderData(filtered);
-        };
+        window.openModal = () => document.getElementById('modal').style.display = 'flex';
+        window.closeModal = () => document.getElementById('modal').style.display = 'none';
 
         fetchFromFirebase();
     </script>
