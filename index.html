@@ -129,6 +129,22 @@
             font-size: 3rem;
         }
 
+        /* ESTILO DO SELO NOVO */
+        .badge-new {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--netflix-red);
+            color: white;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            border-radius: 4px;
+            z-index: 4;
+            text-transform: uppercase;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
         .movie-poster { width: 100%; height: 100%; object-fit: contain; background-color: var(--card-gray); }
 
         .movie-info { padding: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
@@ -159,9 +175,7 @@
         }
 
         /* BLOQUEIO DE ADMINISTRAÇÃO */
-        #migrationBtn, #tmdbUpdateBtn, .btn-add, .btn-delete { 
-            display: none !important; 
-        }
+        #migrationBtn, #tmdbUpdateBtn, .btn-add, .btn-delete { display: none !important; }
     </style>
 </head>
 <body>
@@ -177,7 +191,7 @@
             <button class="btn-add" onclick="window.openModal()">+ ADICIONAR</button>
         </div>
         <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="Pesquisar..." oninput="window.applyFilters()">
+            <input type="text" id="searchInput" placeholder="Pesquisar título..." oninput="window.applyFilters()">
             
             <select id="typeFilter" onchange="window.applyFilters()">
                 <option value="">Todos os Tipos</option>
@@ -185,16 +199,16 @@
 
             <select id="ratingFilter" onchange="window.applyFilters()">
                 <option value="0">Todas as Classificações</option>
-                <optgroup label="Ordenar por classificação">
-                    <option value="high-low">Ordem decrescente (5-1)</option>
-                    <option value="low-high">Ordem crescente (1-5)</option>
+                <optgroup label="Ordenar">
+                    <option value="high-low">Do mais bem avaliado (A-Z)</option>
+                    <option value="low-high">Do mais mal avaliado (A-Z)</option>
                 </optgroup>
                 <optgroup label="Filtrar por Estrelas">
-                    <option value="5">Nota 5</option>
-                    <option value="4">4.0</option>
-                    <option value="3">3.0</option>
-                    <option value="2">2.0</option>
-                    <option value="1">1.0</option>
+                    <option value="5">Nota 5 (Perfeito)</option>
+                    <option value="4">4.0 a 4.9</option>
+                    <option value="3">3.0 a 3.9</option>
+                    <option value="2">2.0 a 2.9</option>
+                    <option value="1">1.0 a 1.9</option>
                 </optgroup>
             </select>
 
@@ -244,33 +258,33 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        // --- RENDERIZAÇÃO COM MULTI-LEVEL SORT (NOTA + ALFABÉTICA) ---
         function renderData(filterData = null, sortType = 'alpha') {
             let itemsToRender = filterData ? [...filterData] : [...dataStore[currentTab]];
 
-            // Lógica de Ordenação
             itemsToRender.sort((a, b) => {
-                if (sortType === 'high-low') {
-                    // Se notas forem iguais, desempata pelo título (A-Z)
-                    return (b.rating - a.rating) || a.title.localeCompare(b.title);
-                } else if (sortType === 'low-high') {
-                    // Se notas forem iguais, desempata pelo título (A-Z)
-                    return (a.rating - b.rating) || a.title.localeCompare(b.title);
-                } else {
-                    // Ordenação Padrão: Apenas Alfabética
-                    return a.title.localeCompare(b.title);
-                }
+                if (sortType === 'high-low') return (b.rating - a.rating) || a.title.localeCompare(b.title);
+                if (sortType === 'low-high') return (a.rating - b.rating) || a.title.localeCompare(b.title);
+                return a.title.localeCompare(b.title);
             });
 
             const g = document.getElementById('movie-grid');
             const htmlBuffer = [];
             document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${itemsToRender.length} obras)`;
             
+            // 30 dias em milissegundos
+            const TRINTA_DIAS = 30 * 24 * 60 * 60 * 1000;
+
             itemsToRender.forEach(item => {
                 const p = (item.rating/5)*100;
                 const reviewHtml = item.review ? `<div class="movie-review">"${item.review}"</div>` : '';
+                
+                // LÓGICA DO SELO NOVO
+                const isRecent = item.timestamp && (Date.now() - item.timestamp < TRINTA_DIAS);
+                const badgeHtml = isRecent ? `<div class="badge-new">Novo!</div>` : '';
+
                 htmlBuffer.push(`
                     <div class="movie-card">
+                        ${badgeHtml}
                         <button class="btn-delete" onclick="window.deleteItem('${item.fireId}')"><i class="fas fa-trash"></i></button>
                         <div class="movie-poster-container">
                             ${item.imageUrl ? `<img src="${item.imageUrl}" class="movie-poster" loading="lazy">` : `<i class="fas fa-film"></i>`}
@@ -296,40 +310,18 @@
             const searchText = document.getElementById('searchInput').value.toLowerCase();
             const selectedType = document.getElementById('typeFilter').value;
             const ratingValue = document.getElementById('ratingFilter').value;
-
-            let sortMode = 'alpha';
-            let ratingBase = 0;
-
-            if (ratingValue === 'high-low' || ratingValue === 'low-high') {
-                sortMode = ratingValue;
-            } else {
-                ratingBase = parseFloat(ratingValue);
-            }
+            let sortMode = (ratingValue === 'high-low' || ratingValue === 'low-high') ? ratingValue : 'alpha';
+            let ratingBase = (!isNaN(ratingValue)) ? parseFloat(ratingValue) : 0;
 
             const filtered = dataStore[currentTab].filter(item => {
                 const matchesSearch = item.title.toLowerCase().includes(searchText);
                 let matchesRating = true;
-                if (ratingBase > 0) {
-                    matchesRating = (ratingBase === 5) ? (item.rating === 5) : (item.rating >= ratingBase && item.rating < (ratingBase + 1));
-                }
+                if (ratingBase > 0) matchesRating = (ratingBase === 5) ? (item.rating === 5) : (item.rating >= ratingBase && item.rating < (ratingBase + 1));
                 let matchesType = selectedType === "" || (item.type && item.type.split('/').map(t => t.trim()).includes(selectedType));
                 return matchesSearch && matchesRating && matchesType;
             });
-
             renderData(filtered, sortMode);
         };
-
-        // --- ATUALIZAR FILTROS ---
-        function updateTypeDropdown() {
-            const typeSelect = document.getElementById('typeFilter');
-            const allTypes = new Set();
-            dataStore[currentTab].forEach(item => {
-                if (item.type) item.type.split('/').forEach(t => allTypes.add(t.trim()));
-            });
-            const sortedTypes = Array.from(allTypes).sort();
-            typeSelect.innerHTML = '<option value="">Todos os Tipos</option>';
-            sortedTypes.forEach(t => { typeSelect.innerHTML += `<option value="${t}">${t}</option>`; });
-        }
 
         window.fetchFromFirebase = async () => {
             try {
@@ -342,6 +334,32 @@
             } catch (e) { document.getElementById('stats').innerText = "Erro ao carregar."; }
         };
 
+        window.saveEntry = async () => {
+            const title = document.getElementById('newTitle').value;
+            const type = document.getElementById('newType').value;
+            const rating = parseFloat(document.getElementById('newRating').value);
+            const review = document.getElementById('newReview').value;
+            if(title && type && !isNaN(rating)) {
+                document.getElementById('stats').innerText = "Salvando...";
+                const img = await getPoster(title, currentTab);
+                // ADICIONADO TIMESTAMP AQUI
+                await addDoc(collection(db, currentTab), { 
+                    title, type, rating, imageUrl: img, review: review, timestamp: Date.now() 
+                });
+                window.closeModal(); await fetchFromFirebase();
+            }
+        };
+
+        // --- OUTRAS FUNÇÕES ---
+        function updateTypeDropdown() {
+            const typeSelect = document.getElementById('typeFilter');
+            const allTypes = new Set();
+            dataStore[currentTab].forEach(item => { if (item.type) item.type.split('/').forEach(t => allTypes.add(t.trim())); });
+            const sortedTypes = Array.from(allTypes).sort();
+            typeSelect.innerHTML = '<option value="">Todos os Tipos</option>';
+            sortedTypes.forEach(t => { typeSelect.innerHTML += `<option value="${t}">${t}</option>`; });
+        }
+
         window.switchTab = async (t, e) => {
             currentTab = t;
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
@@ -351,35 +369,17 @@
             await fetchFromFirebase();
         };
 
+        window.deleteItem = async (id) => { if(confirm("Excluir?")) { await deleteDoc(doc(db, currentTab, id)); await fetchFromFirebase(); } };
+        window.openModal = () => document.getElementById('modal').style.display = 'flex';
+        window.closeModal = () => { document.getElementById('modal').style.display = 'none'; document.getElementById('newTitle').value = ''; document.getElementById('newReview').value = ''; };
         async function getPoster(title, type) {
             const cat = (type === 'series') ? 'tv' : 'movie';
             const clean = title.split('(')[0].split('–')[0].trim();
             try {
                 const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(clean)}&language=pt-BR`);
-                const d = await r.json();
-                return d.results && d.results[0] ? `https://image.tmdb.org/t/p/w500${d.results[0].poster_path}` : "";
+                const d = await r.json(); return d.results && d.results[0] ? `https://image.tmdb.org/t/p/w500${d.results[0].poster_path}` : "";
             } catch (err) { return ""; }
         }
-
-        window.saveEntry = async () => {
-            const title = document.getElementById('newTitle').value;
-            const type = document.getElementById('newType').value;
-            const rating = parseFloat(document.getElementById('newRating').value);
-            const review = document.getElementById('newReview').value;
-            if(title && type && !isNaN(rating)) {
-                document.getElementById('stats').innerText = "Salvando...";
-                const img = await getPoster(title, currentTab);
-                await addDoc(collection(db, currentTab), { title, type, rating, imageUrl: img, review: review });
-                window.closeModal(); await fetchFromFirebase();
-            }
-        };
-
-        window.deleteItem = async (id) => {
-            if(confirm("Excluir?")) { await deleteDoc(doc(db, currentTab, id)); await fetchFromFirebase(); }
-        };
-
-        window.openModal = () => document.getElementById('modal').style.display = 'flex';
-        window.closeModal = () => { document.getElementById('modal').style.display = 'none'; document.getElementById('newTitle').value = ''; document.getElementById('newReview').value = ''; };
 
         fetchFromFirebase();
     </script>
