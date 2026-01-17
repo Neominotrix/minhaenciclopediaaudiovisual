@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha Lista - Sistema Cloud Premium</title>
+    <title>Minha Lista - Sistema Cloud com Trailers</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -15,138 +15,73 @@
         }
 
         body {
-            background-color: var(--bg-black);
-            color: white;
+            background-color: var(--bg-black); color: white;
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding-top: 230px;
+            margin: 0; padding-top: 230px;
         }
 
         header {
-            background-color: rgba(0,0,0,0.95);
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            padding: 20px 4%;
-            box-sizing: border-box;
-            border-bottom: 1px solid #333;
+            background-color: rgba(0,0,0,0.95); position: fixed;
+            top: 0; width: 100%; z-index: 1000; padding: 20px 4%;
+            box-sizing: border-box; border-bottom: 1px solid #333;
         }
 
-        .header-main {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            color: var(--netflix-red);
-            font-size: 1.5rem;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        nav {
-            display: flex;
-            gap: 15px;
-        }
+        .header-main { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { color: var(--netflix-red); font-size: 1.5rem; margin: 0; text-transform: uppercase; letter-spacing: 2px; }
+        nav { display: flex; gap: 15px; }
 
         .nav-link {
-            color: #aaa;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 4px;
+            color: #aaa; text-decoration: none; font-size: 0.9rem; font-weight: bold;
+            cursor: pointer; padding: 5px 10px; border-radius: 4px;
         }
-
-        .nav-link.active {
-            color: white;
-            background: var(--netflix-red);
-        }
+        .nav-link.active { color: white; background: var(--netflix-red); }
 
         .filter-bar {
-            display: flex;
-            gap: 10px;
-            background: rgba(255,255,255,0.05);
-            padding: 15px;
-            border-radius: 8px;
-            align-items: center;
-            flex-wrap: wrap;
+            display: flex; gap: 10px; background: rgba(255,255,255,0.05);
+            padding: 15px; border-radius: 8px; align-items: center; flex-wrap: wrap;
         }
-
         .filter-bar input, .filter-bar select {
-            background: #333;
-            border: 1px solid #555;
-            color: white;
-            padding: 10px;
-            border-radius: 4px;
-            outline: none;
-            font-size: 0.9rem;
+            background: #333; border: 1px solid #555; color: white;
+            padding: 10px; border-radius: 4px; outline: none; font-size: 0.9rem;
         }
 
         #searchInput { flex: 2; min-width: 200px; }
-        #typeFilter, #ratingFilter { flex: 1; min-width: 150px; }
-
         .admin-controls { display: flex; gap: 10px; }
+        
         #migrationBtn, #tmdbUpdateBtn { padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; color: white; }
         #migrationBtn { background: #f39c12; }
         #tmdbUpdateBtn { background: #3498db; }
         .btn-add { background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
         main { padding: 0 4% 50px 4%; }
-
-        .movie-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-            gap: 25px;
-        }
+        .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 25px; }
 
         .movie-card {
-            background: var(--card-gray);
-            border-radius: 8px;
-            overflow: hidden;
-            position: relative;
-            min-height: 480px; 
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.2s;
+            background: var(--card-gray); border-radius: 8px; overflow: hidden;
+            position: relative; min-height: 480px; display: flex;
+            flex-direction: column; transition: transform 0.2s; cursor: pointer;
         }
-
         .movie-card:hover { transform: scale(1.03); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
 
         .movie-poster-container {
-            width: 100%;
-            height: 310px;
-            background: #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #555;
-            font-size: 3rem;
+            width: 100%; height: 310px; background: #333;
+            display: flex; align-items: center; justify-content: center;
+            color: #555; font-size: 3rem; position: relative;
         }
 
-        /* ESTILO DO SELO NOVO */
+        /* Overlay de Play ao passar o mouse */
+        .movie-card:hover .movie-poster-container::after {
+            content: "\f144"; font-family: "Font Awesome 5 Free"; font-weight: 900;
+            position: absolute; font-size: 3rem; color: rgba(255,255,255,0.8);
+        }
+
         .badge-new {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: var(--netflix-red);
-            color: white;
-            padding: 4px 8px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            border-radius: 4px;
-            z-index: 4;
-            text-transform: uppercase;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            position: absolute; top: 10px; left: 10px; background: var(--netflix-red);
+            color: white; padding: 4px 8px; font-size: 0.7rem; font-weight: bold;
+            border-radius: 4px; z-index: 4; text-transform: uppercase;
         }
 
         .movie-poster { width: 100%; height: 100%; object-fit: contain; background-color: var(--card-gray); }
-
         .movie-info { padding: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
         .movie-title { font-weight: bold; font-size: 1rem; margin-top: 5px; height: 2.8em; overflow: hidden; }
         .tag { color: var(--type-green); font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
@@ -158,25 +93,37 @@
 
         .movie-review { font-size: 0.85rem; color: #ccc; font-style: italic; border-top: 1px solid #333; padding-top: 10px; margin-top: 5px; line-height: 1.4; word-wrap: break-word; }
 
-        .btn-delete { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); border: none; color: #fff; cursor: pointer; padding: 8px; border-radius: 50%; opacity: 0; transition: opacity 0.2s; z-index: 5; }
+        .btn-delete {
+            position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7);
+            border: none; color: #fff; cursor: pointer; padding: 8px; border-radius: 50%;
+            opacity: 0; transition: opacity 0.2s; z-index: 5;
+        }
         .movie-card:hover .btn-delete { opacity: 1; }
 
-        #modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
-        .modal-content { background: #181818; padding: 30px; border-radius: 8px; width: 90%; max-width: 450px; display: flex; flex-direction: column; gap: 15px; }
-        .modal-content input, .modal-content textarea { background: #333; border: 1px solid #444; color: white; padding: 12px; border-radius: 4px; }
+        /* MODAIS */
+        #modal, #trailerModal {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #181818; padding: 30px; border-radius: 8px;
+            width: 90%; max-width: 450px; display: flex; flex-direction: column; gap: 15px;
+        }
+        .trailer-content { width: 90%; max-width: 800px; aspect-ratio: 16/9; position: relative; }
+        #trailerFrame { width: 100%; height: 100%; border: none; }
+        .close-trailer { position: absolute; top: -40px; right: 0; color: white; cursor: pointer; font-size: 1.5rem; }
 
         @media (max-width: 768px) {
             body { padding-top: 210px; }
-            header { padding: 15px 4%; }
-            .header-main { flex-direction: column; gap: 10px; }
             .movie-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
             .movie-card { min-height: 380px; }
             .movie-poster-container { height: 220px; }
         }
 
-        /* BLOQUEIO DE ADMINISTRAÇÃO */
+        /* Bloqueio Admin */
         #migrationBtn, #tmdbUpdateBtn, .btn-add, .btn-delete { display: none !important; }
-     </style>
+    </style>
 </head>
 <body>
 
@@ -191,27 +138,21 @@
             <button class="btn-add" onclick="window.openModal()">+ ADICIONAR</button>
         </div>
         <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="Pesquisar título..." oninput="window.applyFilters()">
-            
-            <select id="typeFilter" onchange="window.applyFilters()">
-                <option value="">Todos os Tipos</option>
-            </select>
-
+            <input type="text" id="searchInput" placeholder="Pesquisar..." oninput="window.applyFilters()">
+            <select id="typeFilter" onchange="window.applyFilters()"><option value="">Todos os Tipos</option></select>
             <select id="ratingFilter" onchange="window.applyFilters()">
-                <option value="0">Todas as Classificações</option>
+                <option value="0">Classificações</option>
                 <optgroup label="Ordenar">
-                    <option value="high-low">Do mais bem avaliado (A-Z)</option>
-                    <option value="low-high">Do mais mal avaliado (A-Z)</option>
+                    <option value="high-low">Melhores (A-Z)</option>
+                    <option value="low-high">Piores (A-Z)</option>
                 </optgroup>
-                <optgroup label="Filtrar por Estrelas">
-                    <option value="5">Nota 5 (Perfeito)</option>
+                <optgroup label="Filtrar">
+                    <option value="5">Nota 5</option>
                     <option value="4">4.0 a 4.9</option>
                     <option value="3">3.0 a 3.9</option>
                     <option value="2">2.0 a 2.9</option>
-                    <option value="1">1.0 a 1.9</option>
                 </optgroup>
             </select>
-
             <div class="admin-controls">
                 <button id="migrationBtn" onclick="window.migrateToFirebase()">MIGRAR</button>
                 <button id="tmdbUpdateBtn" onclick="window.updateAllPosters()">POSTERS</button>
@@ -219,11 +160,18 @@
         </div>
     </header>
 
+    <div id="trailerModal" onclick="window.closeTrailer()">
+        <div class="trailer-content" onclick="event.stopPropagation()">
+            <span class="close-trailer" onclick="window.closeTrailer()">&times; Fechar</span>
+            <iframe id="trailerFrame" src="" allowfullscreen></iframe>
+        </div>
+    </div>
+
     <div id="modal">
         <div class="modal-content">
             <h2 style="color: var(--netflix-red); margin: 0;">Nova Obra</h2>
             <input type="text" id="newTitle" placeholder="Título">
-            <input type="text" id="newType" placeholder="Tipo (Ex: Ação/Ficção)">
+            <input type="text" id="newType" placeholder="Tipo (Ação/Ficção)">
             <input type="number" id="newRating" placeholder="Nota" step="0.25">
             <textarea id="newReview" placeholder="Seu relato..." rows="4"></textarea>
             <div style="display:flex; gap:10px;">
@@ -234,7 +182,7 @@
     </div>
 
     <main>
-        <p id="stats" style="font-weight: bold; color: #888;">Verificando conexão...</p>
+        <p id="stats" style="font-weight: bold; color: #888;">Conectando à nuvem...</p>
         <div class="movie-grid" id="movie-grid"></div>
     </main>
 
@@ -258,9 +206,48 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
+        // --- SISTEMA DE TRAILER ---
+        window.watchTrailer = async (title, type) => {
+            const stats = document.getElementById('stats');
+            const originalText = stats.innerText;
+            stats.innerText = "Buscando trailer...";
+
+            const cat = (type === 'series') ? 'tv' : 'movie';
+            const cleanTitle = title.split('(')[0].split('–')[0].trim();
+            
+            try {
+                // 1. Achar o ID da obra
+                const resSearch = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}&language=pt-BR`);
+                const dataSearch = await resSearch.json();
+                
+                if (dataSearch.results[0]) {
+                    const id = dataSearch.results[0].id;
+                    // 2. Achar os vídeos desse ID
+                    const resVid = await fetch(`https://api.themoviedb.org/3/${cat}/${id}/videos?api_key=${TMDB_API_KEY}`);
+                    const dataVid = await resVid.json();
+                    
+                    // 3. Filtrar por Trailer no YouTube
+                    const trailer = dataVid.results.find(v => v.type === 'Trailer' && v.site === 'YouTube') || dataVid.results[0];
+
+                    if (trailer) {
+                        document.getElementById('trailerFrame').src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1`;
+                        document.getElementById('trailerModal').style.display = 'flex';
+                    } else {
+                        alert("Trailer não encontrado para esta obra.");
+                    }
+                } else { alert("Obra não encontrada no banco de dados do TMDB."); }
+            } catch (err) { alert("Erro ao buscar vídeo."); }
+            stats.innerText = originalText;
+        };
+
+        window.closeTrailer = () => {
+            document.getElementById('trailerModal').style.display = 'none';
+            document.getElementById('trailerFrame').src = ""; // Para o vídeo parar de tocar
+        };
+
+        // --- RENDERIZAÇÃO ---
         function renderData(filterData = null, sortType = 'alpha') {
             let itemsToRender = filterData ? [...filterData] : [...dataStore[currentTab]];
-
             itemsToRender.sort((a, b) => {
                 if (sortType === 'high-low') return (b.rating - a.rating) || a.title.localeCompare(b.title);
                 if (sortType === 'low-high') return (a.rating - b.rating) || a.title.localeCompare(b.title);
@@ -269,23 +256,18 @@
 
             const g = document.getElementById('movie-grid');
             const htmlBuffer = [];
-            document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${itemsToRender.length} obras)`;
-            
-            // 30 dias em milissegundos
             const TRINTA_DIAS = 30 * 24 * 60 * 60 * 1000;
 
             itemsToRender.forEach(item => {
                 const p = (item.rating/5)*100;
-                const reviewHtml = item.review ? `<div class="movie-review">"${item.review}"</div>` : '';
-                
-                // LÓGICA DO SELO NOVO
                 const isRecent = item.timestamp && (Date.now() - item.timestamp < TRINTA_DIAS);
-                const badgeHtml = isRecent ? `<div class="badge-new">Novo!</div>` : '';
+                const badge = isRecent ? `<div class="badge-new">Novo!</div>` : '';
+                const reviewHtml = item.review ? `<div class="movie-review">"${item.review}"</div>` : '';
 
                 htmlBuffer.push(`
-                    <div class="movie-card">
-                        ${badgeHtml}
-                        <button class="btn-delete" onclick="window.deleteItem('${item.fireId}')"><i class="fas fa-trash"></i></button>
+                    <div class="movie-card" onclick="window.watchTrailer('${item.title}', '${currentTab}')">
+                        ${badge}
+                        <button class="btn-delete" onclick="event.stopPropagation(); window.deleteItem('${item.fireId}')"><i class="fas fa-trash"></i></button>
                         <div class="movie-poster-container">
                             ${item.imageUrl ? `<img src="${item.imageUrl}" class="movie-poster" loading="lazy">` : `<i class="fas fa-film"></i>`}
                         </div>
@@ -304,8 +286,10 @@
                 `);
             });
             g.innerHTML = htmlBuffer.join('');
+            document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${itemsToRender.length})`;
         }
 
+        // --- FILTROS E CONEXÃO ---
         window.applyFilters = () => {
             const searchText = document.getElementById('searchInput').value.toLowerCase();
             const selectedType = document.getElementById('typeFilter').value;
@@ -315,8 +299,7 @@
 
             const filtered = dataStore[currentTab].filter(item => {
                 const matchesSearch = item.title.toLowerCase().includes(searchText);
-                let matchesRating = true;
-                if (ratingBase > 0) matchesRating = (ratingBase === 5) ? (item.rating === 5) : (item.rating >= ratingBase && item.rating < (ratingBase + 1));
+                let matchesRating = ratingBase > 0 ? (ratingBase === 5 ? item.rating === 5 : (item.rating >= ratingBase && item.rating < ratingBase + 1)) : true;
                 let matchesType = selectedType === "" || (item.type && item.type.split('/').map(t => t.trim()).includes(selectedType));
                 return matchesSearch && matchesRating && matchesType;
             });
@@ -326,38 +309,18 @@
         window.fetchFromFirebase = async () => {
             try {
                 const s = await getDocs(collection(db, currentTab));
-                const l = [];
-                s.forEach(d => l.push({ fireId: d.id, ...d.data() }));
+                const l = []; s.forEach(d => l.push({ fireId: d.id, ...d.data() }));
                 dataStore[currentTab] = l;
-                updateTypeDropdown();
-                renderData();
-            } catch (e) { document.getElementById('stats').innerText = "Erro ao carregar."; }
+                updateTypeDropdown(); renderData();
+            } catch (e) { document.getElementById('stats').innerText = "Erro de conexão."; }
         };
 
-        window.saveEntry = async () => {
-            const title = document.getElementById('newTitle').value;
-            const type = document.getElementById('newType').value;
-            const rating = parseFloat(document.getElementById('newRating').value);
-            const review = document.getElementById('newReview').value;
-            if(title && type && !isNaN(rating)) {
-                document.getElementById('stats').innerText = "Salvando...";
-                const img = await getPoster(title, currentTab);
-                // ADICIONADO TIMESTAMP AQUI
-                await addDoc(collection(db, currentTab), { 
-                    title, type, rating, imageUrl: img, review: review, timestamp: Date.now() 
-                });
-                window.closeModal(); await fetchFromFirebase();
-            }
-        };
-
-        // --- OUTRAS FUNÇÕES ---
         function updateTypeDropdown() {
             const typeSelect = document.getElementById('typeFilter');
             const allTypes = new Set();
             dataStore[currentTab].forEach(item => { if (item.type) item.type.split('/').forEach(t => allTypes.add(t.trim())); });
-            const sortedTypes = Array.from(allTypes).sort();
             typeSelect.innerHTML = '<option value="">Todos os Tipos</option>';
-            sortedTypes.forEach(t => { typeSelect.innerHTML += `<option value="${t}">${t}</option>`; });
+            Array.from(allTypes).sort().forEach(t => { typeSelect.innerHTML += `<option value="${t}">${t}</option>`; });
         }
 
         window.switchTab = async (t, e) => {
@@ -369,21 +332,25 @@
             await fetchFromFirebase();
         };
 
+        window.saveEntry = async () => {
+            const title = document.getElementById('newTitle').value;
+            const type = document.getElementById('newType').value;
+            const rating = parseFloat(document.getElementById('newRating').value);
+            const review = document.getElementById('newReview').value;
+            if(title && type && !isNaN(rating)) {
+                const resSearch = await fetch(`https://api.themoviedb.org/3/search/${currentTab === 'series' ? 'tv' : 'movie'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&language=pt-BR`);
+                const data = await resSearch.json();
+                const img = data.results[0] ? `https://image.tmdb.org/t/p/w500${data.results[0].poster_path}` : "";
+                await addDoc(collection(db, currentTab), { title, type, rating, imageUrl: img, review, timestamp: Date.now() });
+                window.closeModal(); await fetchFromFirebase();
+            }
+        };
+
         window.deleteItem = async (id) => { if(confirm("Excluir?")) { await deleteDoc(doc(db, currentTab, id)); await fetchFromFirebase(); } };
         window.openModal = () => document.getElementById('modal').style.display = 'flex';
-        window.closeModal = () => { document.getElementById('modal').style.display = 'none'; document.getElementById('newTitle').value = ''; document.getElementById('newReview').value = ''; };
-        async function getPoster(title, type) {
-            const cat = (type === 'series') ? 'tv' : 'movie';
-            const clean = title.split('(')[0].split('–')[0].trim();
-            try {
-                const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(clean)}&language=pt-BR`);
-                const d = await r.json(); return d.results && d.results[0] ? `https://image.tmdb.org/t/p/w500${d.results[0].poster_path}` : "";
-            } catch (err) { return ""; }
-        }
+        window.closeModal = () => document.getElementById('modal').style.display = 'none';
 
         fetchFromFirebase();
     </script>
 </body>
 </html>
-
-
