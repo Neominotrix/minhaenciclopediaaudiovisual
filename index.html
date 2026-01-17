@@ -48,9 +48,11 @@
         #searchInput { flex: 2; min-width: 200px; }
         .admin-controls { display: flex; gap: 10px; }
         
-        #migrationBtn, #tmdbUpdateBtn { padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; color: white; }
+        /* Estilos base de Admin */
+        #migrationBtn, #tmdbUpdateBtn, #normalizeBtn { padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; color: white; }
         #migrationBtn { background: #f39c12; }
         #tmdbUpdateBtn { background: #3498db; }
+        #normalizeBtn { background: #8e44ad; }
         .btn-add { background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
         main { padding: 0 4% 50px 4%; }
@@ -122,8 +124,14 @@
             .movie-poster-container { height: 220px; }
         }
 
-        /* Bloqueio de Administração (Remova para gerenciar) */
-        #migrationBtn, #tmdbUpdateBtn, .btn-add, .btn-delete { display: none !important; }
+        /* --- BLOQUEIO ATIVO DE ADMINISTRAÇÃO --- */
+        #migrationBtn, 
+        #tmdbUpdateBtn, 
+        #normalizeBtn, 
+        .btn-add, 
+        .btn-delete { 
+            display: none !important; 
+        }
     </style>
 </head>
 <body>
@@ -139,7 +147,7 @@
             <button class="btn-add" onclick="window.openModal()">+ ADICIONAR</button>
         </div>
         <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="Pesquisar..." oninput="window.applyFilters()">
+            <input type="text" id="searchInput" placeholder="Pesquisar título..." oninput="window.applyFilters()">
             <select id="typeFilter" onchange="window.applyFilters()"><option value="">Todos os Tipos</option></select>
             <select id="ratingFilter" onchange="window.applyFilters()">
                 <option value="0">Classificações</option>
@@ -147,10 +155,17 @@
                     <option value="high-low">Melhores (A-Z)</option>
                     <option value="low-high">Piores (A-Z)</option>
                 </optgroup>
+                <optgroup label="Filtrar">
+                    <option value="5">Nota 5</option>
+                    <option value="4">4.0 a 4.9</option>
+                    <option value="3">3.0 a 3.9</option>
+                    <option value="2">2.0 a 2.9</option>
+                </optgroup>
             </select>
             <div class="admin-controls">
                 <button id="migrationBtn" onclick="window.migrateToFirebase()">MIGRAR</button>
                 <button id="tmdbUpdateBtn" onclick="window.updateAllPosters()">POSTERS</button>
+                <button id="normalizeBtn" onclick="window.normalizeDatabase()">PADRONIZAR BANCO</button>
             </div>
         </div>
     </header>
@@ -168,7 +183,7 @@
             <input type="text" id="newTitle" placeholder="Título">
             <input type="text" id="newType" placeholder="Tipo">
             <input type="number" id="newRating" placeholder="Nota" step="0.25">
-            <input type="text" id="newTrailerUrl" placeholder="URL do Trailer YouTube (Opcional)">
+            <input type="text" id="newTrailerUrl" placeholder="URL do Trailer YouTube">
             <textarea id="newReview" placeholder="Seu relato..." rows="4"></textarea>
             <div style="display:flex; gap:10px;">
                 <button onclick="window.closeModal()" style="flex:1; padding:10px; background:#444; border:none; color:white;">Cancelar</button>
@@ -202,7 +217,22 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        // --- FUNÇÃO PARA CONVERTER LINK YOUTUBE ---
+        window.normalizeDatabase = async () => {
+            if(!confirm("Deseja padronizar o banco?")) return;
+            const collections = ['filmes', 'series', 'animacoes'];
+            for (const colName of collections) {
+                const querySnapshot = await getDocs(collection(db, colName));
+                for (const d of querySnapshot.docs) {
+                    const data = d.data();
+                    const updates = {};
+                    if (data.trailerUrl === undefined) updates.trailerUrl = "";
+                    if (data.timestamp === undefined) updates.timestamp = Date.now();
+                    if (Object.keys(updates).length > 0) await updateDoc(doc(db, colName, d.id), updates);
+                }
+            }
+            alert("Padronizado!"); location.reload();
+        };
+
         function formatYoutubeLink(url) {
             if (!url) return null;
             let videoId = "";
@@ -212,23 +242,16 @@
             return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
         }
 
-        // --- SISTEMA DE TRAILER COM PRIORIDADE MANUAL ---
         window.watchTrailer = async (title, type, manualUrl) => {
-            const stats = document.getElementById('stats');
             const frame = document.getElementById('trailerFrame');
-            
-            // 1. Verificar se existe link manual
-            if (manualUrl) {
+            if (manualUrl && manualUrl.trim() !== "") {
                 frame.src = formatYoutubeLink(manualUrl);
                 document.getElementById('trailerModal').style.display = 'flex';
                 return;
             }
-
-            // 2. Fallback para busca automática se não houver manual
-            stats.innerText = "Buscando trailer...";
+            document.getElementById('stats').innerText = "Buscando automático...";
             const cat = (type === 'series') ? 'tv' : 'movie';
             const cleanTitle = title.split('(')[0].split('–')[0].trim();
-            
             try {
                 const resSearch = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}&language=pt-BR`);
                 const dataSearch = await resSearch.json();
@@ -240,16 +263,13 @@
                     if (trailer) {
                         frame.src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1`;
                         document.getElementById('trailerModal').style.display = 'flex';
-                    } else { alert("Trailer automático não encontrado."); }
-                } else { alert("Obra não encontrada."); }
-            } catch (err) { alert("Erro de conexão."); }
-            stats.innerText = `${currentTab.toUpperCase()} (${dataStore[currentTab].length})`;
+                    } else { alert("Não encontrado."); }
+                }
+            } catch (err) { alert("Erro."); }
+            document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${dataStore[currentTab].length})`;
         };
 
-        window.closeTrailer = () => {
-            document.getElementById('trailerModal').style.display = 'none';
-            document.getElementById('trailerFrame').src = "";
-        };
+        window.closeTrailer = () => { document.getElementById('trailerModal').style.display = 'none'; document.getElementById('trailerFrame').src = ""; };
 
         function renderData(filterData = null, sortType = 'alpha') {
             let itemsToRender = filterData ? [...filterData] : [...dataStore[currentTab]];
@@ -258,16 +278,13 @@
                 if (sortType === 'low-high') return (a.rating - b.rating) || a.title.localeCompare(b.title);
                 return a.title.localeCompare(b.title);
             });
-
             const g = document.getElementById('movie-grid');
             const htmlBuffer = [];
             const TRINTA_DIAS = 30 * 24 * 60 * 60 * 1000;
-
             itemsToRender.forEach(item => {
                 const p = (item.rating/5)*100;
                 const badge = (item.timestamp && (Date.now() - item.timestamp < TRINTA_DIAS)) ? `<div class="badge-new">Novo!</div>` : '';
                 const reviewHtml = item.review ? `<div class="movie-review">"${item.review}"</div>` : '';
-
                 htmlBuffer.push(`
                     <div class="movie-card">
                         ${badge}
@@ -296,36 +313,13 @@
             document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${itemsToRender.length})`;
         }
 
-        window.saveEntry = async () => {
-            const title = document.getElementById('newTitle').value;
-            const type = document.getElementById('newType').value;
-            const rating = parseFloat(document.getElementById('newRating').value);
-            const review = document.getElementById('newReview').value;
-            const trailerUrl = document.getElementById('newTrailerUrl').value;
-
-            if(title && type && !isNaN(rating)) {
-                document.getElementById('stats').innerText = "Salvando...";
-                const resSearch = await fetch(`https://api.themoviedb.org/3/search/${currentTab === 'series' ? 'tv' : 'movie'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&language=pt-BR`);
-                const data = await resSearch.json();
-                const img = data.results[0] ? `https://image.tmdb.org/t/p/w500${data.results[0].poster_path}` : "";
-                
-                await addDoc(collection(db, currentTab), { 
-                    title, type, rating, imageUrl: img, review, trailerUrl, timestamp: Date.now() 
-                });
-                
-                window.closeModal(); 
-                document.getElementById('newTrailerUrl').value = "";
-                await fetchFromFirebase();
-            }
-        };
-
         window.fetchFromFirebase = async () => {
             try {
                 const s = await getDocs(collection(db, currentTab));
                 const l = []; s.forEach(d => l.push({ fireId: d.id, ...d.data() }));
                 dataStore[currentTab] = l;
                 updateTypeDropdown(); renderData();
-            } catch (e) { document.getElementById('stats').innerText = "Erro."; }
+            } catch (e) { }
         };
 
         window.applyFilters = () => {
@@ -355,13 +349,27 @@
             currentTab = t;
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
             e.classList.add('active');
-            document.getElementById('searchInput').value = "";
             await fetchFromFirebase();
+        };
+
+        window.saveEntry = async () => {
+            const title = document.getElementById('newTitle').value;
+            const type = document.getElementById('newType').value;
+            const rating = parseFloat(document.getElementById('newRating').value);
+            const review = document.getElementById('newReview').value;
+            const trailerUrl = document.getElementById('newTrailerUrl').value;
+            if(title && type && !isNaN(rating)) {
+                const resSearch = await fetch(`https://api.themoviedb.org/3/search/${currentTab === 'series' ? 'tv' : 'movie'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&language=pt-BR`);
+                const data = await resSearch.json();
+                const img = data.results[0] ? `https://image.tmdb.org/t/p/w500${data.results[0].poster_path}` : "";
+                await addDoc(collection(db, currentTab), { title, type, rating, imageUrl: img, review, trailerUrl, timestamp: Date.now() });
+                window.closeModal(); await fetchFromFirebase();
+            }
         };
 
         window.deleteItem = async (id) => { if(confirm("Excluir?")) { await deleteDoc(doc(db, currentTab, id)); await fetchFromFirebase(); } };
         window.openModal = () => document.getElementById('modal').style.display = 'flex';
-        window.closeModal = () => document.getElementById('modal').style.display = 'none';
+        window.closeModal = () => { document.getElementById('modal').style.display = 'none'; };
 
         fetchFromFirebase();
     </script>
