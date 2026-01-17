@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha Lista - Sistema Cloud com Trailers</title>
+    <title>Minha Lista - Sistema Cloud Premium</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -58,8 +58,8 @@
 
         .movie-card {
             background: var(--card-gray); border-radius: 8px; overflow: hidden;
-            position: relative; min-height: 480px; display: flex;
-            flex-direction: column; transition: transform 0.2s; cursor: pointer;
+            position: relative; min-height: 520px; display: flex;
+            flex-direction: column; transition: transform 0.2s;
         }
         .movie-card:hover { transform: scale(1.03); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
 
@@ -67,12 +67,6 @@
             width: 100%; height: 310px; background: #333;
             display: flex; align-items: center; justify-content: center;
             color: #555; font-size: 3rem; position: relative;
-        }
-
-        /* Overlay de Play ao passar o mouse */
-        .movie-card:hover .movie-poster-container::after {
-            content: "\f144"; font-family: "Font Awesome 5 Free"; font-weight: 900;
-            position: absolute; font-size: 3rem; color: rgba(255,255,255,0.8);
         }
 
         .badge-new {
@@ -93,6 +87,14 @@
 
         .movie-review { font-size: 0.85rem; color: #ccc; font-style: italic; border-top: 1px solid #333; padding-top: 10px; margin-top: 5px; line-height: 1.4; word-wrap: break-word; }
 
+        .btn-trailer {
+            background-color: var(--netflix-red); color: white; border: none;
+            padding: 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            gap: 8px; margin-top: 15px; transition: background 0.3s; width: 100%;
+        }
+        .btn-trailer:hover { background-color: #ff0f1a; }
+
         .btn-delete {
             position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7);
             border: none; color: #fff; cursor: pointer; padding: 8px; border-radius: 50%;
@@ -100,7 +102,6 @@
         }
         .movie-card:hover .btn-delete { opacity: 1; }
 
-        /* MODAIS */
         #modal, #trailerModal {
             display: none; position: fixed; z-index: 2000; left: 0; top: 0;
             width: 100%; height: 100%; background: rgba(0,0,0,0.9);
@@ -111,17 +112,17 @@
             width: 90%; max-width: 450px; display: flex; flex-direction: column; gap: 15px;
         }
         .trailer-content { width: 90%; max-width: 800px; aspect-ratio: 16/9; position: relative; }
-        #trailerFrame { width: 100%; height: 100%; border: none; }
-        .close-trailer { position: absolute; top: -40px; right: 0; color: white; cursor: pointer; font-size: 1.5rem; }
+        #trailerFrame { width: 100%; height: 100%; border: none; border-radius: 8px; }
+        .close-trailer { position: absolute; top: -40px; right: 0; color: white; cursor: pointer; font-size: 1.2rem; font-weight: bold; }
 
         @media (max-width: 768px) {
             body { padding-top: 210px; }
             .movie-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
-            .movie-card { min-height: 380px; }
+            .movie-card { min-height: 450px; }
             .movie-poster-container { height: 220px; }
         }
 
-        /* Bloqueio Admin */
+        /* Bloqueio de Administração (Remova para gerenciar) */
         #migrationBtn, #tmdbUpdateBtn, .btn-add, .btn-delete { display: none !important; }
     </style>
 </head>
@@ -146,12 +147,6 @@
                     <option value="high-low">Melhores (A-Z)</option>
                     <option value="low-high">Piores (A-Z)</option>
                 </optgroup>
-                <optgroup label="Filtrar">
-                    <option value="5">Nota 5</option>
-                    <option value="4">4.0 a 4.9</option>
-                    <option value="3">3.0 a 3.9</option>
-                    <option value="2">2.0 a 2.9</option>
-                </optgroup>
             </select>
             <div class="admin-controls">
                 <button id="migrationBtn" onclick="window.migrateToFirebase()">MIGRAR</button>
@@ -162,8 +157,8 @@
 
     <div id="trailerModal" onclick="window.closeTrailer()">
         <div class="trailer-content" onclick="event.stopPropagation()">
-            <span class="close-trailer" onclick="window.closeTrailer()">&times; Fechar</span>
-            <iframe id="trailerFrame" src="" allowfullscreen></iframe>
+            <span class="close-trailer" onclick="window.closeTrailer()"><i class="fas fa-times"></i> Fechar Janela</span>
+            <iframe id="trailerFrame" src="" allowfullscreen allow="autoplay"></iframe>
         </div>
     </div>
 
@@ -171,8 +166,9 @@
         <div class="modal-content">
             <h2 style="color: var(--netflix-red); margin: 0;">Nova Obra</h2>
             <input type="text" id="newTitle" placeholder="Título">
-            <input type="text" id="newType" placeholder="Tipo (Ação/Ficção)">
+            <input type="text" id="newType" placeholder="Tipo">
             <input type="number" id="newRating" placeholder="Nota" step="0.25">
+            <input type="text" id="newTrailerUrl" placeholder="URL do Trailer YouTube (Opcional)">
             <textarea id="newReview" placeholder="Seu relato..." rows="4"></textarea>
             <div style="display:flex; gap:10px;">
                 <button onclick="window.closeModal()" style="flex:1; padding:10px; background:#444; border:none; color:white;">Cancelar</button>
@@ -182,7 +178,7 @@
     </div>
 
     <main>
-        <p id="stats" style="font-weight: bold; color: #888;">Conectando à nuvem...</p>
+        <p id="stats" style="font-weight: bold; color: #888;">Carregando...</p>
         <div class="movie-grid" id="movie-grid"></div>
     </main>
 
@@ -206,46 +202,55 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        // --- SISTEMA DE TRAILER ---
-        window.watchTrailer = async (title, type) => {
-            const stats = document.getElementById('stats');
-            const originalText = stats.innerText;
-            stats.innerText = "Buscando trailer...";
+        // --- FUNÇÃO PARA CONVERTER LINK YOUTUBE ---
+        function formatYoutubeLink(url) {
+            if (!url) return null;
+            let videoId = "";
+            if (url.includes("v=")) videoId = url.split("v=")[1].split("&")[0];
+            else if (url.includes("youtu.be/")) videoId = url.split("youtu.be/")[1].split("?")[0];
+            else if (url.includes("embed/")) return url;
+            return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
+        }
 
+        // --- SISTEMA DE TRAILER COM PRIORIDADE MANUAL ---
+        window.watchTrailer = async (title, type, manualUrl) => {
+            const stats = document.getElementById('stats');
+            const frame = document.getElementById('trailerFrame');
+            
+            // 1. Verificar se existe link manual
+            if (manualUrl) {
+                frame.src = formatYoutubeLink(manualUrl);
+                document.getElementById('trailerModal').style.display = 'flex';
+                return;
+            }
+
+            // 2. Fallback para busca automática se não houver manual
+            stats.innerText = "Buscando trailer...";
             const cat = (type === 'series') ? 'tv' : 'movie';
             const cleanTitle = title.split('(')[0].split('–')[0].trim();
             
             try {
-                // 1. Achar o ID da obra
                 const resSearch = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}&language=pt-BR`);
                 const dataSearch = await resSearch.json();
-                
                 if (dataSearch.results[0]) {
                     const id = dataSearch.results[0].id;
-                    // 2. Achar os vídeos desse ID
                     const resVid = await fetch(`https://api.themoviedb.org/3/${cat}/${id}/videos?api_key=${TMDB_API_KEY}`);
                     const dataVid = await resVid.json();
-                    
-                    // 3. Filtrar por Trailer no YouTube
                     const trailer = dataVid.results.find(v => v.type === 'Trailer' && v.site === 'YouTube') || dataVid.results[0];
-
                     if (trailer) {
-                        document.getElementById('trailerFrame').src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1`;
+                        frame.src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1`;
                         document.getElementById('trailerModal').style.display = 'flex';
-                    } else {
-                        alert("Trailer não encontrado para esta obra.");
-                    }
-                } else { alert("Obra não encontrada no banco de dados do TMDB."); }
-            } catch (err) { alert("Erro ao buscar vídeo."); }
-            stats.innerText = originalText;
+                    } else { alert("Trailer automático não encontrado."); }
+                } else { alert("Obra não encontrada."); }
+            } catch (err) { alert("Erro de conexão."); }
+            stats.innerText = `${currentTab.toUpperCase()} (${dataStore[currentTab].length})`;
         };
 
         window.closeTrailer = () => {
             document.getElementById('trailerModal').style.display = 'none';
-            document.getElementById('trailerFrame').src = ""; // Para o vídeo parar de tocar
+            document.getElementById('trailerFrame').src = "";
         };
 
-        // --- RENDERIZAÇÃO ---
         function renderData(filterData = null, sortType = 'alpha') {
             let itemsToRender = filterData ? [...filterData] : [...dataStore[currentTab]];
             itemsToRender.sort((a, b) => {
@@ -260,14 +265,13 @@
 
             itemsToRender.forEach(item => {
                 const p = (item.rating/5)*100;
-                const isRecent = item.timestamp && (Date.now() - item.timestamp < TRINTA_DIAS);
-                const badge = isRecent ? `<div class="badge-new">Novo!</div>` : '';
+                const badge = (item.timestamp && (Date.now() - item.timestamp < TRINTA_DIAS)) ? `<div class="badge-new">Novo!</div>` : '';
                 const reviewHtml = item.review ? `<div class="movie-review">"${item.review}"</div>` : '';
 
                 htmlBuffer.push(`
-                    <div class="movie-card" onclick="window.watchTrailer('${item.title}', '${currentTab}')">
+                    <div class="movie-card">
                         ${badge}
-                        <button class="btn-delete" onclick="event.stopPropagation(); window.deleteItem('${item.fireId}')"><i class="fas fa-trash"></i></button>
+                        <button class="btn-delete" onclick="window.deleteItem('${item.fireId}')"><i class="fas fa-trash"></i></button>
                         <div class="movie-poster-container">
                             ${item.imageUrl ? `<img src="${item.imageUrl}" class="movie-poster" loading="lazy">` : `<i class="fas fa-film"></i>`}
                         </div>
@@ -276,11 +280,14 @@
                                 <div class="tag">${item.type}</div>
                                 <div class="movie-title">${item.title}</div>
                                 <div class="star-rating">
-                                    <div class="stars-outer">★★★★★<div class="stars-inner" style="width:${p}%">★★★★★</div></div>
+                                    <div class="stars-outer"><div class="stars-inner" style="width:${p}%">★★★★★</div>★★★★★</div>
                                     <span class="rating-number">${item.rating}</span>
                                 </div>
                                 ${reviewHtml}
                             </div>
+                            <button class="btn-trailer" onclick="window.watchTrailer('${item.title.replace(/'/g, "\\'")}', '${currentTab}', '${item.trailerUrl || ''}')">
+                                <i class="fas fa-play"></i> Assistir Trailer
+                            </button>
                         </div>
                     </div>
                 `);
@@ -289,21 +296,27 @@
             document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${itemsToRender.length})`;
         }
 
-        // --- FILTROS E CONEXÃO ---
-        window.applyFilters = () => {
-            const searchText = document.getElementById('searchInput').value.toLowerCase();
-            const selectedType = document.getElementById('typeFilter').value;
-            const ratingValue = document.getElementById('ratingFilter').value;
-            let sortMode = (ratingValue === 'high-low' || ratingValue === 'low-high') ? ratingValue : 'alpha';
-            let ratingBase = (!isNaN(ratingValue)) ? parseFloat(ratingValue) : 0;
+        window.saveEntry = async () => {
+            const title = document.getElementById('newTitle').value;
+            const type = document.getElementById('newType').value;
+            const rating = parseFloat(document.getElementById('newRating').value);
+            const review = document.getElementById('newReview').value;
+            const trailerUrl = document.getElementById('newTrailerUrl').value;
 
-            const filtered = dataStore[currentTab].filter(item => {
-                const matchesSearch = item.title.toLowerCase().includes(searchText);
-                let matchesRating = ratingBase > 0 ? (ratingBase === 5 ? item.rating === 5 : (item.rating >= ratingBase && item.rating < ratingBase + 1)) : true;
-                let matchesType = selectedType === "" || (item.type && item.type.split('/').map(t => t.trim()).includes(selectedType));
-                return matchesSearch && matchesRating && matchesType;
-            });
-            renderData(filtered, sortMode);
+            if(title && type && !isNaN(rating)) {
+                document.getElementById('stats').innerText = "Salvando...";
+                const resSearch = await fetch(`https://api.themoviedb.org/3/search/${currentTab === 'series' ? 'tv' : 'movie'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&language=pt-BR`);
+                const data = await resSearch.json();
+                const img = data.results[0] ? `https://image.tmdb.org/t/p/w500${data.results[0].poster_path}` : "";
+                
+                await addDoc(collection(db, currentTab), { 
+                    title, type, rating, imageUrl: img, review, trailerUrl, timestamp: Date.now() 
+                });
+                
+                window.closeModal(); 
+                document.getElementById('newTrailerUrl').value = "";
+                await fetchFromFirebase();
+            }
         };
 
         window.fetchFromFirebase = async () => {
@@ -312,7 +325,22 @@
                 const l = []; s.forEach(d => l.push({ fireId: d.id, ...d.data() }));
                 dataStore[currentTab] = l;
                 updateTypeDropdown(); renderData();
-            } catch (e) { document.getElementById('stats').innerText = "Erro de conexão."; }
+            } catch (e) { document.getElementById('stats').innerText = "Erro."; }
+        };
+
+        window.applyFilters = () => {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const selectedType = document.getElementById('typeFilter').value;
+            const ratingValue = document.getElementById('ratingFilter').value;
+            let sortMode = (ratingValue === 'high-low' || ratingValue === 'low-high') ? ratingValue : 'alpha';
+            let ratingBase = (!isNaN(ratingValue)) ? parseFloat(ratingValue) : 0;
+            const filtered = dataStore[currentTab].filter(item => {
+                const matchesSearch = item.title.toLowerCase().includes(searchText);
+                let matchesRating = ratingBase > 0 ? (ratingBase === 5 ? item.rating === 5 : (item.rating >= ratingBase && item.rating < ratingBase + 1)) : true;
+                let matchesType = selectedType === "" || (item.type && item.type.split('/').map(t => t.trim()).includes(selectedType));
+                return matchesSearch && matchesRating && matchesType;
+            });
+            renderData(filtered, sortMode);
         };
 
         function updateTypeDropdown() {
@@ -328,22 +356,7 @@
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
             e.classList.add('active');
             document.getElementById('searchInput').value = "";
-            document.getElementById('ratingFilter').value = "0";
             await fetchFromFirebase();
-        };
-
-        window.saveEntry = async () => {
-            const title = document.getElementById('newTitle').value;
-            const type = document.getElementById('newType').value;
-            const rating = parseFloat(document.getElementById('newRating').value);
-            const review = document.getElementById('newReview').value;
-            if(title && type && !isNaN(rating)) {
-                const resSearch = await fetch(`https://api.themoviedb.org/3/search/${currentTab === 'series' ? 'tv' : 'movie'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&language=pt-BR`);
-                const data = await resSearch.json();
-                const img = data.results[0] ? `https://image.tmdb.org/t/p/w500${data.results[0].poster_path}` : "";
-                await addDoc(collection(db, currentTab), { title, type, rating, imageUrl: img, review, timestamp: Date.now() });
-                window.closeModal(); await fetchFromFirebase();
-            }
         };
 
         window.deleteItem = async (id) => { if(confirm("Excluir?")) { await deleteDoc(doc(db, currentTab, id)); await fetchFromFirebase(); } };
