@@ -71,10 +71,20 @@
             color: #555; font-size: 3rem; position: relative;
         }
 
+        /* --- ESTILO DO SELO NOVO (RESTAURADO) --- */
         .badge-new {
-            position: absolute; top: 10px; left: 10px; background: var(--netflix-red);
-            color: white; padding: 4px 8px; font-size: 0.7rem; font-weight: bold;
-            border-radius: 4px; z-index: 4; text-transform: uppercase;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--netflix-red);
+            color: white; /* Mantive branco para melhor contraste com o vermelho */
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            border-radius: 4px;
+            z-index: 4;
+            text-transform: uppercase;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
         .movie-poster { width: 100%; height: 100%; object-fit: contain; background-color: var(--card-gray); }
@@ -124,14 +134,16 @@
             .movie-poster-container { height: 220px; }
         }
 
-        /*--- BLOQUEIO ATIVO DE ADMINISTRAÇÃO --- */
-        /*#migrationBtn, 
+        /* --- BLOQUEIO ATIVO DE ADMINISTRAÇÃO (Remova as barras de comentário para esconder) --- */
+        
+        #migrationBtn, 
         #tmdbUpdateBtn, 
         #normalizeBtn, 
         .btn-add, 
         .btn-delete { 
-            display: none !important;*/
+            display: none !important; 
         }
+        
     </style>
 </head>
 <body>
@@ -217,6 +229,23 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
+        // --- FUNÇÕES DE ADMINISTRAÇÃO (RESTAURADAS) ---
+        window.migrateToFirebase = async () => {
+            alert("A função de migração automática requer a lista 'initialMovies'. Como esta é uma versão antiga, adicione obras pelo botão +ADICIONAR.");
+        };
+
+        window.updateAllPosters = async () => {
+            const s = await getDocs(collection(db, currentTab));
+            for (let dSnap of s.docs) {
+                const item = dSnap.data();
+                if (!item.imageUrl) {
+                    const img = await getPoster(item.title, currentTab);
+                    if (img) await updateDoc(doc(db, currentTab, dSnap.id), { imageUrl: img });
+                }
+            }
+            alert("Posters atualizados!"); location.reload();
+        };
+
         window.normalizeDatabase = async () => {
             if(!confirm("Deseja padronizar o banco?")) return;
             const collections = ['filmes', 'series', 'animacoes'];
@@ -233,6 +262,7 @@
             alert("Padronizado!"); location.reload();
         };
 
+        // --- TRAILERS E LINKS ---
         function formatYoutubeLink(url) {
             if (!url) return null;
             let videoId = "";
@@ -263,14 +293,15 @@
                     if (trailer) {
                         frame.src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1`;
                         document.getElementById('trailerModal').style.display = 'flex';
-                    } else { alert("Não encontrado."); }
+                    } else { alert("Trailer não encontrado."); }
                 }
-            } catch (err) { alert("Erro."); }
+            } catch (err) { alert("Erro de conexão."); }
             document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${dataStore[currentTab].length})`;
         };
 
         window.closeTrailer = () => { document.getElementById('trailerModal').style.display = 'none'; document.getElementById('trailerFrame').src = ""; };
 
+        // --- RENDER E FILTROS ---
         function renderData(filterData = null, sortType = 'alpha') {
             let itemsToRender = filterData ? [...filterData] : [...dataStore[currentTab]];
             itemsToRender.sort((a, b) => {
@@ -367,6 +398,15 @@
             }
         };
 
+        async function getPoster(title, type) {
+            const cat = (type === 'series') ? 'tv' : 'movie';
+            const clean = title.split('(')[0].split('–')[0].trim();
+            try {
+                const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(clean)}&language=pt-BR`);
+                const d = await r.json(); return d.results && d.results[0] ? `https://image.tmdb.org/t/p/w500${d.results[0].poster_path}` : "";
+            } catch (err) { return ""; }
+        }
+
         window.deleteItem = async (id) => { if(confirm("Excluir?")) { await deleteDoc(doc(db, currentTab, id)); await fetchFromFirebase(); } };
         window.openModal = () => document.getElementById('modal').style.display = 'flex';
         window.closeModal = () => { document.getElementById('modal').style.display = 'none'; };
@@ -375,10 +415,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
