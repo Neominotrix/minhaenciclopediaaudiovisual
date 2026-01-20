@@ -12,6 +12,7 @@
             --card-gray: #1f1f1f;
             --star-color: #f1c40f;
             --type-green: #2ecc71;
+            --neon-yellow: #f1c40f;
         }
 
         body {
@@ -48,7 +49,6 @@
         #searchInput { flex: 2; min-width: 200px; }
         .admin-controls { display: flex; gap: 10px; }
         
-        /* Estilos base de Admin */
         #migrationBtn, #tmdbUpdateBtn, #normalizeBtn { padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; color: white; }
         #migrationBtn { background: #f39c12; }
         #tmdbUpdateBtn { background: #3498db; }
@@ -56,35 +56,64 @@
         .btn-add { background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
         main { padding: 0 4% 50px 4%; }
-        .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 25px; }
+        .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 30px; }
 
         .movie-card {
-            background: var(--card-gray); border-radius: 8px; overflow: hidden;
-            position: relative; min-height: 520px; display: flex;
-            flex-direction: column; transition: transform 0.2s;
+            background: var(--card-gray); 
+            border-radius: 12px; 
+            overflow: hidden;
+            position: relative; 
+            min-height: 520px; 
+            display: flex;
+            flex-direction: column; 
+            transition: transform 0.3s ease;
+            z-index: 1;
+            padding: 3px; 
+            box-sizing: border-box;
         }
-        .movie-card:hover { transform: scale(1.03); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+
+        .movie-card:hover::before {
+            content: '';
+            position: absolute;
+            z-index: -2;
+            left: -50%; top: -50%; width: 200%; height: 200%;
+            background-image: conic-gradient(transparent, var(--neon-yellow), transparent 30%);
+            animation: rotate-border 2s linear infinite;
+        }
+
+        .movie-card:hover::after {
+            content: '';
+            position: absolute;
+            z-index: -1;
+            left: 3px; top: 3px; width: calc(100% - 6px); height: calc(100% - 6px);
+            background: var(--card-gray);
+            border-radius: 10px;
+        }
+
+        .movie-card:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(241, 196, 15, 0.4); }
+
+        @keyframes rotate-border { 100% { transform: rotate(360deg); } }
+
+        .movie-card > * { position: relative; z-index: 2; }
 
         .movie-poster-container {
             width: 100%; height: 310px; background: #333;
             display: flex; align-items: center; justify-content: center;
             color: #555; font-size: 3rem; position: relative;
+            border-radius: 8px 8px 0 0; overflow: hidden;
         }
 
-        /* --- ESTILO DO SELO NOVO (RESTAURADO) --- */
         .badge-new {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: var(--netflix-red);
-            color: white; /* Mantive branco para melhor contraste com o vermelho */
-            padding: 4px 8px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            border-radius: 4px;
-            z-index: 4;
-            text-transform: uppercase;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            position: absolute; top: 13px; left: 13px; background: var(--netflix-red);
+            color: white; padding: 4px 8px; font-size: 0.7rem; font-weight: bold;
+            border-radius: 4px; z-index: 4; text-transform: uppercase;
+        }
+
+        /* --- CONTADOR DE CLIQUES NO CARD --- */
+        .click-badge {
+            position: absolute; top: 13px; right: 13px; background: rgba(0,0,0,0.7);
+            color: #f1c40f; padding: 4px 8px; font-size: 0.7rem; font-weight: bold;
+            border-radius: 4px; z-index: 4; display: flex; align-items: center; gap: 5px;
         }
 
         .movie-poster { width: 100%; height: 100%; object-fit: contain; background-color: var(--card-gray); }
@@ -105,10 +134,9 @@
             cursor: pointer; display: flex; align-items: center; justify-content: center;
             gap: 8px; margin-top: 15px; transition: background 0.3s; width: 100%;
         }
-        .btn-trailer:hover { background-color: #ff0f1a; }
 
         .btn-delete {
-            position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7);
+            position: absolute; top: 13px; right: 13px; background: rgba(0,0,0,0.7);
             border: none; color: #fff; cursor: pointer; padding: 8px; border-radius: 50%;
             opacity: 0; transition: opacity 0.2s; z-index: 5;
         }
@@ -134,16 +162,8 @@
             .movie-poster-container { height: 220px; }
         }
 
-        /* --- BLOQUEIO ATIVO DE ADMINISTRAÇÃO (Remova as barras de comentário para esconder) --- */
-        
-        #migrationBtn, 
-        #tmdbUpdateBtn, 
-        #normalizeBtn, 
-        .btn-add, 
-        .btn-delete { 
-            display: none !important; 
-        }
-        
+        /* BLOQUEIO DE ADMINISTRAÇÃO */
+        #migrationBtn, #tmdbUpdateBtn, #normalizeBtn, .btn-add, .btn-delete { display: none !important; }
     </style>
 </head>
 <body>
@@ -159,19 +179,13 @@
             <button class="btn-add" onclick="window.openModal()">+ ADICIONAR</button>
         </div>
         <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="Pesquisar título..." oninput="window.applyFilters()">
+            <input type="text" id="searchInput" placeholder="Pesquisar..." oninput="window.applyFilters()">
             <select id="typeFilter" onchange="window.applyFilters()"><option value="">Todos os Tipos</option></select>
             <select id="ratingFilter" onchange="window.applyFilters()">
                 <option value="0">Classificações</option>
                 <optgroup label="Ordenar">
                     <option value="high-low">Melhores (A-Z)</option>
                     <option value="low-high">Piores (A-Z)</option>
-                </optgroup>
-                <optgroup label="Filtrar">
-                    <option value="5">Nota 5</option>
-                    <option value="4">4.0 a 4.9</option>
-                    <option value="3">3.0 a 3.9</option>
-                    <option value="2">2.0 a 2.9</option>
                 </optgroup>
             </select>
             <div class="admin-controls">
@@ -184,7 +198,7 @@
 
     <div id="trailerModal" onclick="window.closeTrailer()">
         <div class="trailer-content" onclick="event.stopPropagation()">
-            <span class="close-trailer" onclick="window.closeTrailer()"><i class="fas fa-times"></i> Fechar Janela</span>
+            <span class="close-trailer" onclick="window.closeTrailer()">Fechar Janela</span>
             <iframe id="trailerFrame" src="" allowfullscreen allow="autoplay"></iframe>
         </div>
     </div>
@@ -210,8 +224,9 @@
     </main>
 
     <script type="module">
+        // ADICIONADO 'increment' NA IMPORTAÇÃO ABAIXO
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, increment, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD4QIzbdBZB8IUloK6KPlMrBZ83BTYzc9Q",
@@ -229,25 +244,8 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        // --- FUNÇÕES DE ADMINISTRAÇÃO (RESTAURADAS) ---
-        window.migrateToFirebase = async () => {
-            alert("A função de migração automática requer a lista 'initialMovies'. Como esta é uma versão antiga, adicione obras pelo botão +ADICIONAR.");
-        };
-
-        window.updateAllPosters = async () => {
-            const s = await getDocs(collection(db, currentTab));
-            for (let dSnap of s.docs) {
-                const item = dSnap.data();
-                if (!item.imageUrl) {
-                    const img = await getPoster(item.title, currentTab);
-                    if (img) await updateDoc(doc(db, currentTab, dSnap.id), { imageUrl: img });
-                }
-            }
-            alert("Posters atualizados!"); location.reload();
-        };
-
         window.normalizeDatabase = async () => {
-            if(!confirm("Deseja padronizar o banco?")) return;
+            if(!confirm("Deseja padronizar o banco? Isso adicionará o contador de cliques a obras antigas.")) return;
             const collections = ['filmes', 'series', 'animacoes'];
             for (const colName of collections) {
                 const querySnapshot = await getDocs(collection(db, colName));
@@ -256,13 +254,13 @@
                     const updates = {};
                     if (data.trailerUrl === undefined) updates.trailerUrl = "";
                     if (data.timestamp === undefined) updates.timestamp = Date.now();
+                    if (data.clicks === undefined) updates.clicks = 0; // Inicializa cliques
                     if (Object.keys(updates).length > 0) await updateDoc(doc(db, colName, d.id), updates);
                 }
             }
             alert("Padronizado!"); location.reload();
         };
 
-        // --- TRAILERS E LINKS ---
         function formatYoutubeLink(url) {
             if (!url) return null;
             let videoId = "";
@@ -272,14 +270,22 @@
             return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
         }
 
-        window.watchTrailer = async (title, type, manualUrl) => {
+        // FUNÇÃO ATUALIZADA PARA CONTAR CLIQUES
+        window.watchTrailer = async (fireId, title, type, manualUrl) => {
             const frame = document.getElementById('trailerFrame');
+            
+            // REGISTRA O CLIQUE NO FIREBASE
+            try {
+                const docRef = doc(db, currentTab, fireId);
+                await updateDoc(docRef, { clicks: increment(1) });
+            } catch (e) { console.error("Erro ao registrar clique:", e); }
+
             if (manualUrl && manualUrl.trim() !== "") {
                 frame.src = formatYoutubeLink(manualUrl);
                 document.getElementById('trailerModal').style.display = 'flex';
                 return;
             }
-            document.getElementById('stats').innerText = "Buscando automático...";
+            
             const cat = (type === 'series') ? 'tv' : 'movie';
             const cleanTitle = title.split('(')[0].split('–')[0].trim();
             try {
@@ -293,15 +299,13 @@
                     if (trailer) {
                         frame.src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1`;
                         document.getElementById('trailerModal').style.display = 'flex';
-                    } else { alert("Trailer não encontrado."); }
+                    }
                 }
-            } catch (err) { alert("Erro de conexão."); }
-            document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${dataStore[currentTab].length})`;
+            } catch (err) { }
         };
 
         window.closeTrailer = () => { document.getElementById('trailerModal').style.display = 'none'; document.getElementById('trailerFrame').src = ""; };
 
-        // --- RENDER E FILTROS ---
         function renderData(filterData = null, sortType = 'alpha') {
             let itemsToRender = filterData ? [...filterData] : [...dataStore[currentTab]];
             itemsToRender.sort((a, b) => {
@@ -312,13 +316,21 @@
             const g = document.getElementById('movie-grid');
             const htmlBuffer = [];
             const TRINTA_DIAS = 30 * 24 * 60 * 60 * 1000;
+            
             itemsToRender.forEach(item => {
                 const p = (item.rating/5)*100;
-                const badge = (item.timestamp && (Date.now() - item.timestamp < TRINTA_DIAS)) ? `<div class="badge-new">Novo!</div>` : '';
+                const isRecent = item.timestamp && (Date.now() - item.timestamp < TRINTA_DIAS);
+                const badge = isRecent ? `<div class="badge-new">Novo!</div>` : '';
                 const reviewHtml = item.review ? `<div class="movie-review">"${item.review}"</div>` : '';
+                
+                // MOSTRAR CLIQUES (SE EXISTIR)
+                const clicks = item.clicks || 0;
+                const clickBadge = `<div class="click-badge"><i class="fas fa-fire"></i> ${clicks}</div>`;
+
                 htmlBuffer.push(`
                     <div class="movie-card">
                         ${badge}
+                        ${clickBadge}
                         <button class="btn-delete" onclick="window.deleteItem('${item.fireId}')"><i class="fas fa-trash"></i></button>
                         <div class="movie-poster-container">
                             ${item.imageUrl ? `<img src="${item.imageUrl}" class="movie-poster" loading="lazy">` : `<i class="fas fa-film"></i>`}
@@ -333,7 +345,7 @@
                                 </div>
                                 ${reviewHtml}
                             </div>
-                            <button class="btn-trailer" onclick="window.watchTrailer('${item.title.replace(/'/g, "\\'")}', '${currentTab}', '${item.trailerUrl || ''}')">
+                            <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}', '${item.title.replace(/'/g, "\\'")}', '${currentTab}', '${item.trailerUrl || ''}')">
                                 <i class="fas fa-play"></i> Assistir Trailer
                             </button>
                         </div>
@@ -393,19 +405,12 @@
                 const resSearch = await fetch(`https://api.themoviedb.org/3/search/${currentTab === 'series' ? 'tv' : 'movie'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&language=pt-BR`);
                 const data = await resSearch.json();
                 const img = data.results[0] ? `https://image.tmdb.org/t/p/w500${data.results[0].poster_path}` : "";
-                await addDoc(collection(db, currentTab), { title, type, rating, imageUrl: img, review, trailerUrl, timestamp: Date.now() });
+                await addDoc(collection(db, currentTab), { 
+                    title, type, rating, imageUrl: img, review, trailerUrl, timestamp: Date.now(), clicks: 0 
+                });
                 window.closeModal(); await fetchFromFirebase();
             }
         };
-
-        async function getPoster(title, type) {
-            const cat = (type === 'series') ? 'tv' : 'movie';
-            const clean = title.split('(')[0].split('–')[0].trim();
-            try {
-                const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(clean)}&language=pt-BR`);
-                const d = await r.json(); return d.results && d.results[0] ? `https://image.tmdb.org/t/p/w500${d.results[0].poster_path}` : "";
-            } catch (err) { return ""; }
-        }
 
         window.deleteItem = async (id) => { if(confirm("Excluir?")) { await deleteDoc(doc(db, currentTab, id)); await fetchFromFirebase(); } };
         window.openModal = () => document.getElementById('modal').style.display = 'flex';
