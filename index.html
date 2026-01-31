@@ -109,7 +109,6 @@
             border-radius: 4px; z-index: 4; text-transform: uppercase;
         }
 
-        /* --- CONTADOR DE CLIQUES NO CARD --- */
         .click-badge {
             position: absolute; top: 13px; right: 13px; background: rgba(0,0,0,0.7);
             color: #f1c40f; padding: 4px 8px; font-size: 0.7rem; font-weight: bold;
@@ -179,15 +178,26 @@
             <button class="btn-add" onclick="window.openModal()">+ ADICIONAR</button>
         </div>
         <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="Pesquisar..." oninput="window.applyFilters()">
+            <input type="text" id="searchInput" placeholder="Pesquisar título..." oninput="window.applyFilters()">
             <select id="typeFilter" onchange="window.applyFilters()"><option value="">Todos os Tipos</option></select>
+            
             <select id="ratingFilter" onchange="window.applyFilters()">
-                <option value="0">Classificações</option>
+                <option value="0">Ordenar / Filtrar</option>
                 <optgroup label="Ordenar">
-                    <option value="high-low">Melhores (A-Z)</option>
-                    <option value="low-high">Piores (A-Z)</option>
+                    <option value="newest">Recém Lançados</option>
+                    <option value="high-low">Melhores Avaliados</option>
+                    <option value="low-high">Menores Avaliados</option>
+                    <option value="alpha">Ordem Alfabética (A-Z)</option>
+                </optgroup>
+                <optgroup label="Filtrar por Estrela">
+                    <option value="5">5 Estrelas</option>
+                    <option value="4">4 Estrelas (4.0 - 4.9)</option>
+                    <option value="3">3 Estrelas (3.0 - 3.9)</option>
+                    <option value="2">2 Estrelas (2.0 - 2.9)</option>
+                    <option value="1">1 Estrela (1.0 - 1.9)</option>
                 </optgroup>
             </select>
+
             <div class="admin-controls">
                 <button id="migrationBtn" onclick="window.migrateToFirebase()">MIGRAR</button>
                 <button id="tmdbUpdateBtn" onclick="window.updateAllPosters()">POSTERS</button>
@@ -224,7 +234,6 @@
     </main>
 
     <script type="module">
-        // ADICIONADO 'increment' NA IMPORTAÇÃO ABAIXO
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, increment, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -245,7 +254,7 @@
         let currentTab = 'filmes';
 
         window.normalizeDatabase = async () => {
-            if(!confirm("Deseja padronizar o banco? Isso adicionará o contador de cliques a obras antigas.")) return;
+            if(!confirm("Deseja padronizar o banco?")) return;
             const collections = ['filmes', 'series', 'animacoes'];
             for (const colName of collections) {
                 const querySnapshot = await getDocs(collection(db, colName));
@@ -254,7 +263,7 @@
                     const updates = {};
                     if (data.trailerUrl === undefined) updates.trailerUrl = "";
                     if (data.timestamp === undefined) updates.timestamp = Date.now();
-                    if (data.clicks === undefined) updates.clicks = 0; // Inicializa cliques
+                    if (data.clicks === undefined) updates.clicks = 0;
                     if (Object.keys(updates).length > 0) await updateDoc(doc(db, colName, d.id), updates);
                 }
             }
@@ -270,15 +279,12 @@
             return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
         }
 
-        // FUNÇÃO ATUALIZADA PARA CONTAR CLIQUES
         window.watchTrailer = async (fireId, title, type, manualUrl) => {
             const frame = document.getElementById('trailerFrame');
-            
-            // REGISTRA O CLIQUE NO FIREBASE
             try {
                 const docRef = doc(db, currentTab, fireId);
                 await updateDoc(docRef, { clicks: increment(1) });
-            } catch (e) { console.error("Erro ao registrar clique:", e); }
+            } catch (e) { }
 
             if (manualUrl && manualUrl.trim() !== "") {
                 frame.src = formatYoutubeLink(manualUrl);
@@ -308,11 +314,15 @@
 
         function renderData(filterData = null, sortType = 'alpha') {
             let itemsToRender = filterData ? [...filterData] : [...dataStore[currentTab]];
+            
+            // LÓGICA DE ORDENAÇÃO ATUALIZADA
             itemsToRender.sort((a, b) => {
+                if (sortType === 'newest') return (b.timestamp || 0) - (a.timestamp || 0) || a.title.localeCompare(b.title);
                 if (sortType === 'high-low') return (b.rating - a.rating) || a.title.localeCompare(b.title);
                 if (sortType === 'low-high') return (a.rating - b.rating) || a.title.localeCompare(b.title);
                 return a.title.localeCompare(b.title);
             });
+
             const g = document.getElementById('movie-grid');
             const htmlBuffer = [];
             const TRINTA_DIAS = 30 * 24 * 60 * 60 * 1000;
@@ -321,11 +331,9 @@
                 const p = (item.rating/5)*100;
                 const isRecent = item.timestamp && (Date.now() - item.timestamp < TRINTA_DIAS);
                 const badge = isRecent ? `<div class="badge-new">Novo!</div>` : '';
-                const reviewHtml = item.review ? `<div class="movie-review">"${item.review}"</div>` : '';
-                
-                // MOSTRAR CLIQUES (SE EXISTIR)
                 const clicks = item.clicks || 0;
                 const clickBadge = `<div class="click-badge"><i class="fas fa-fire"></i> ${clicks}</div>`;
+                const reviewHtml = item.review ? `<div class="movie-review">"${item.review}"</div>` : '';
 
                 htmlBuffer.push(`
                     <div class="movie-card">
@@ -369,11 +377,31 @@
             const searchText = document.getElementById('searchInput').value.toLowerCase();
             const selectedType = document.getElementById('typeFilter').value;
             const ratingValue = document.getElementById('ratingFilter').value;
-            let sortMode = (ratingValue === 'high-low' || ratingValue === 'low-high') ? ratingValue : 'alpha';
-            let ratingBase = (!isNaN(ratingValue)) ? parseFloat(ratingValue) : 0;
+            
+            let sortMode = 'alpha';
+            let ratingBase = -1;
+
+            // Detecta se o valor é um modo de ordenação ou um filtro de estrela
+            if (['high-low', 'low-high', 'newest', 'alpha'].includes(ratingValue)) {
+                sortMode = ratingValue;
+            } else {
+                ratingBase = parseFloat(ratingValue);
+            }
+
             const filtered = dataStore[currentTab].filter(item => {
                 const matchesSearch = item.title.toLowerCase().includes(searchText);
-                let matchesRating = ratingBase > 0 ? (ratingBase === 5 ? item.rating === 5 : (item.rating >= ratingBase && item.rating < ratingBase + 1)) : true;
+                
+                // LÓGICA DE FAIXA DE ESTRELAS SOLICITADA
+                let matchesRating = true;
+                if (ratingBase >= 0) {
+                    if (ratingBase === 5) {
+                        matchesRating = item.rating === 5;
+                    } else {
+                        // Ex: se ratingBase é 3, pega de 3.0 até 3.99
+                        matchesRating = item.rating >= ratingBase && item.rating < (ratingBase + 1);
+                    }
+                }
+
                 let matchesType = selectedType === "" || (item.type && item.type.split('/').map(t => t.trim()).includes(selectedType));
                 return matchesSearch && matchesRating && matchesType;
             });
