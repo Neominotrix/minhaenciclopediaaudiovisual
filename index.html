@@ -315,7 +315,6 @@
         function renderData(filterData = null, sortType = 'alpha') {
             let itemsToRender = filterData ? [...filterData] : [...dataStore[currentTab]];
             
-            // LÓGICA DE ORDENAÇÃO ATUALIZADA
             itemsToRender.sort((a, b) => {
                 if (sortType === 'newest') return (b.timestamp || 0) - (a.timestamp || 0) || a.title.localeCompare(b.title);
                 if (sortType === 'high-low') return (b.rating - a.rating) || a.title.localeCompare(b.title);
@@ -391,13 +390,12 @@
             const filtered = dataStore[currentTab].filter(item => {
                 const matchesSearch = item.title.toLowerCase().includes(searchText);
                 
-                // LÓGICA DE FAIXA DE ESTRELAS SOLICITADA
+                // CORREÇÃO: Ignora o filtro de nota se for 0 (Todas) ou se for um modo de ordenação
                 let matchesRating = true;
-                if (ratingBase >= 0) {
+                if (ratingBase > 0) {
                     if (ratingBase === 5) {
                         matchesRating = item.rating === 5;
                     } else {
-                        // Ex: se ratingBase é 3, pega de 3.0 até 3.99
                         matchesRating = item.rating >= ratingBase && item.rating < (ratingBase + 1);
                     }
                 }
@@ -420,6 +418,9 @@
             currentTab = t;
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
             e.classList.add('active');
+            // Resetar filtros visuais ao trocar de aba
+            document.getElementById('searchInput').value = "";
+            document.getElementById('ratingFilter').value = "0";
             await fetchFromFirebase();
         };
 
