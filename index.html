@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minha Lista Audiovisual</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <style>
         :root {
             --netflix-red: #E50914;
@@ -51,7 +53,7 @@
         main { padding: 0 4% 50px 4%; }
         .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 30px; }
 
-        /* Card com Brilho Neon */
+        /* Card Visual */
         .movie-card {
             background: var(--card-gray); border-radius: 12px; overflow: hidden;
             position: relative; min-height: 520px; display: flex;
@@ -59,70 +61,64 @@
             z-index: 1; padding: 3px; box-sizing: border-box;
         }
 
+        .movie-card:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(241, 196, 15, 0.4); }
         .movie-card:hover::before {
             content: ''; position: absolute; z-index: -2;
             left: -50%; top: -50%; width: 200%; height: 200%;
             background-image: conic-gradient(transparent, var(--neon-yellow), transparent 30%);
             animation: rotate-border 2s linear infinite;
         }
-
         .movie-card:hover::after {
             content: ''; position: absolute; z-index: -1;
             left: 3px; top: 3px; width: calc(100% - 6px); height: calc(100% - 6px);
             background: var(--card-gray); border-radius: 10px;
         }
-
-        .movie-card:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(241, 196, 15, 0.4); }
         @keyframes rotate-border { 100% { transform: rotate(360deg); } }
-
-        .movie-card > * { position: relative; z-index: 2; }
 
         .movie-poster-container {
             width: 100%; height: 310px; background: #333;
             display: flex; align-items: center; justify-content: center;
-            color: #555; font-size: 3rem; position: relative;
-            border-radius: 8px 8px 0 0; overflow: hidden;
+            position: relative; border-radius: 8px 8px 0 0; overflow: hidden;
         }
 
-        .badge-new {
-            position: absolute; top: 13px; left: 13px; background: var(--netflix-red);
-            color: white; padding: 4px 8px; font-size: 0.7rem; font-weight: bold;
-            border-radius: 4px; z-index: 4; text-transform: uppercase;
-        }
+        .movie-poster { width: 100%; height: 100%; object-fit: cover; }
+        .badge-new { position: absolute; top: 13px; left: 13px; background: var(--netflix-red); color: white; padding: 4px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; z-index: 4; text-transform: uppercase; }
+        .click-badge { position: absolute; top: 13px; right: 13px; background: rgba(0,0,0,0.7); color: #f1c40f; padding: 4px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; z-index: 4; display: flex; align-items: center; gap: 5px; }
 
-        .click-badge {
-            position: absolute; top: 13px; right: 13px; background: rgba(0,0,0,0.7);
-            color: #f1c40f; padding: 4px 8px; font-size: 0.7rem; font-weight: bold;
-            border-radius: 4px; z-index: 4; display: flex; align-items: center; gap: 5px;
-        }
-
-        .movie-poster { width: 100%; height: 100%; object-fit: contain; background-color: var(--card-gray); }
         .movie-info { padding: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
         .movie-title { font-weight: bold; font-size: 1rem; margin-top: 5px; height: 2.8em; overflow: hidden; }
         .tag { color: var(--type-green); font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
-
-        .star-rating { margin-top: 5px; display: flex; align-items: center; margin-bottom: 10px; }
         .stars-outer { position: relative; color: #444; font-size: 0.9rem; }
         .stars-inner { position: absolute; top: 0; left: 0; overflow: hidden; width: 0; color: var(--star-color); white-space: nowrap; }
-        .rating-number { font-weight: bold; color: var(--star-color); margin-left: 8px; font-size: 0.9rem; }
 
-        .movie-review { font-size: 0.85rem; color: #ccc; font-style: italic; border-top: 1px solid #333; padding-top: 10px; margin-top: 5px; line-height: 1.4; word-wrap: break-word; }
-
-        .btn-trailer {
-            background-color: var(--netflix-red); color: white; border: none;
-            padding: 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;
+        .btn-trailer, .btn-share {
+            border: none; padding: 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
-            gap: 8px; margin-top: 15px; transition: background 0.3s; width: 100%;
+            gap: 8px; margin-top: 10px; width: 100%; transition: 0.3s;
         }
+        .btn-trailer { background-color: var(--netflix-red); color: white; }
+        .btn-share { background-color: #333; color: var(--neon-yellow); border: 1px solid #444; }
+        .btn-share:hover { background-color: var(--neon-yellow); color: #000; }
 
-        #trailerModal {
-            display: none; position: fixed; z-index: 2000; left: 0; top: 0;
-            width: 100%; height: 100%; background: rgba(0,0,0,0.9);
-            justify-content: center; align-items: center;
+        /* Estilo do Template de Story (Escondido) */
+        #story-template {
+            position: absolute; left: -9999px; top: 0;
+            width: 1080px; height: 1920px;
+            background: #000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 80px;
+            box-sizing: border-box; overflow: hidden;
         }
+        .st-bg { position: absolute; width: 100%; height: 100%; object-fit: cover; filter: blur(60px) brightness(0.4); z-index: 1; }
+        .st-card { position: relative; z-index: 2; width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .st-poster { width: 750px; height: 1100px; object-fit: cover; border-radius: 30px; box-shadow: 0 40px 80px rgba(0,0,0,0.8); border: 5px solid rgba(241, 196, 15, 0.3); }
+        .st-title { font-size: 70px; font-weight: 900; text-align: center; margin-top: 60px; color: white; text-shadow: 0 5px 15px rgba(0,0,0,0.5); width: 100%; }
+        .st-stars { font-size: 80px; color: var(--neon-yellow); margin-top: 20px; letter-spacing: 10px; }
+        .st-footer { position: absolute; bottom: 80px; z-index: 2; color: var(--netflix-red); font-size: 35px; font-weight: bold; letter-spacing: 10px; opacity: 0.8; }
+
+        /* Modais */
+        #trailerModal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
         .trailer-content { width: 90%; max-width: 800px; aspect-ratio: 16/9; position: relative; }
         #trailerFrame { width: 100%; height: 100%; border: none; border-radius: 8px; }
-        .close-trailer { position: absolute; top: -40px; right: 0; color: white; cursor: pointer; font-size: 1.2rem; font-weight: bold; }
 
         @media (max-width: 768px) {
             body { padding-top: 210px; }
@@ -131,6 +127,16 @@
     </style>
 </head>
 <body>
+
+    <div id="story-template">
+        <img id="st-img-bg" class="st-bg">
+        <div class="st-card">
+            <img id="st-img-poster" class="st-poster">
+            <div id="st-txt-title" class="st-title"></div>
+            <div id="st-txt-stars" class="st-stars"></div>
+        </div>
+        <div class="st-footer">MINHA LISTA AUDIOVISUAL</div>
+    </div>
 
     <header>
         <div class="header-main">
@@ -144,7 +150,6 @@
         <div class="filter-bar">
             <input type="text" id="searchInput" placeholder="Pesquisar título..." oninput="window.applyFilters()">
             <select id="typeFilter" onchange="window.applyFilters()"><option value="">Todos os Tipos</option></select>
-            
             <select id="ratingFilter" onchange="window.applyFilters()">
                 <option value="0">Ordenar / Filtrar</option>
                 <optgroup label="Ordenar">
@@ -152,12 +157,10 @@
                     <option value="high-low">Melhores Avaliados</option>
                     <option value="alpha">Ordem Alfabética (A-Z)</option>
                 </optgroup>
-                <optgroup label="Filtrar por Estrela">
+                <optgroup label="Estrelas">
                     <option value="5">5 Estrelas</option>
                     <option value="4">4 Estrelas</option>
                     <option value="3">3 Estrelas</option>
-                    <option value="2">2 Estrelas</option>
-                    <option value="1">1 Estrela</option>
                 </optgroup>
             </select>
         </div>
@@ -165,13 +168,12 @@
 
     <div id="trailerModal" onclick="window.closeTrailer()">
         <div class="trailer-content" onclick="event.stopPropagation()">
-            <span class="close-trailer" onclick="window.closeTrailer()"><i class="fas fa-times"></i> Fechar Janela</span>
             <iframe id="trailerFrame" src="" allowfullscreen allow="autoplay"></iframe>
         </div>
     </div>
 
     <main>
-        <p id="stats" style="font-weight: bold; color: #888;">Carregando...</p>
+        <p id="stats" style="font-weight: bold; color: #888;">Sincronizando banco de dados...</p>
         <div class="movie-grid" id="movie-grid"></div>
     </main>
 
@@ -195,25 +197,53 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        function formatYoutubeLink(url) {
-            if (!url) return null;
-            let id = "";
-            if (url.includes("v=")) id = url.split("v=")[1].split("&")[0];
-            else if (url.includes("youtu.be/")) id = url.split("youtu.be/")[1];
-            return id ? `https://www.youtube.com/embed/${id}?autoplay=1` : url;
-        }
+        // --- SISTEMA DE COMPARTILHAMENTO ---
+        window.shareCard = async (title, imgUrl, rating) => {
+            const template = document.getElementById('story-template');
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando...';
 
+            // 1. Configurar o Template
+            document.getElementById('st-img-bg').src = imgUrl;
+            document.getElementById('st-img-poster').src = imgUrl;
+            document.getElementById('st-txt-title').innerText = title.toUpperCase();
+            document.getElementById('st-txt-stars').innerText = "★".repeat(Math.round(rating)) + "☆".repeat(5 - Math.round(rating));
+
+            // 2. Aguardar o carregamento das imagens no template
+            setTimeout(async () => {
+                try {
+                    const canvas = await html2canvas(template, {
+                        useCORS: true,
+                        allowTaint: false,
+                        scale: 1.5, // Equilíbrio entre qualidade e tamanho de arquivo
+                        backgroundColor: "#000"
+                    });
+
+                    const image = canvas.toDataURL("image/png");
+                    const link = document.createElement('a');
+                    link.download = `Story_${title.replace(/ /g, '_')}.png`;
+                    link.href = image;
+                    link.click();
+                } catch (err) {
+                    alert("Erro ao gerar imagem. Tente novamente.");
+                } finally {
+                    btn.innerHTML = originalText;
+                }
+            }, 800);
+        };
+
+        // --- LÓGICA DO SITE ---
         window.watchTrailer = async (fireId, title, type, manualUrl) => {
             const frame = document.getElementById('trailerFrame');
-            // Incrementar cliques (público)
             try { await updateDoc(doc(db, currentTab, fireId), { clicks: increment(1) }); } catch (e) {}
-
             if (manualUrl) {
-                frame.src = formatYoutubeLink(manualUrl);
+                let id = manualUrl.includes("v=") ? manualUrl.split("v=")[1].split("&")[0] : manualUrl.split("youtu.be/")[1];
+                frame.src = id ? `https://www.youtube.com/embed/${id}?autoplay=1` : manualUrl;
                 document.getElementById('trailerModal').style.display = 'flex';
                 return;
             }
-            
             const cat = (type === 'series') ? 'tv' : 'movie';
             try {
                 const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title.split('(')[0].trim())}&language=pt-BR`);
@@ -238,7 +268,7 @@
             });
 
             const g = document.getElementById('movie-grid');
-            const html = items.map(item => {
+            g.innerHTML = items.map(item => {
                 const p = (item.rating/5)*100;
                 const isRecent = (Date.now() - (item.timestamp || 0) < 2592000000);
                 return `
@@ -255,14 +285,18 @@
                                 <div class="star-rating"><div class="stars-outer"><div class="stars-inner" style="width:${p}%">★★★★★</div>★★★★★</div></div>
                                 ${item.review ? `<div class="movie-review">"${item.review}"</div>` : ''}
                             </div>
-                            <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}', '${item.title.replace(/'/g, "\\'")}', '${currentTab}', '${item.trailerUrl || ''}')">
-                                <i class="fas fa-play"></i> Assistir Trailer
-                            </button>
+                            <div style="margin-top: 10px;">
+                                <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}', '${item.title.replace(/'/g, "\\'")}', '${currentTab}', '${item.trailerUrl || ''}')">
+                                    <i class="fas fa-play"></i> Trailer
+                                </button>
+                                <button class="btn-share" onclick="window.shareCard('${item.title.replace(/'/g, "\\'")}', '${item.imageUrl}', ${item.rating})">
+                                    <i class="fas fa-share-alt"></i> Stories
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
             }).join('');
-            g.innerHTML = html;
             document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${items.length})`;
         }
 
