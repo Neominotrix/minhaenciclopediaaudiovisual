@@ -33,34 +33,22 @@
         h1 { color: var(--netflix-red); font-size: 1.5rem; margin: 0; text-transform: uppercase; letter-spacing: 2px; }
         
         nav { display: flex; gap: 15px; }
-        .nav-link {
-            color: #aaa; text-decoration: none; font-size: 0.9rem; font-weight: bold;
-            cursor: pointer; padding: 5px 10px; border-radius: 4px;
-        }
+        .nav-link { color: #aaa; text-decoration: none; font-size: 0.9rem; font-weight: bold; cursor: pointer; padding: 5px 10px; border-radius: 4px; }
         .nav-link.active { color: white; background: var(--netflix-red); }
 
-        .filter-bar {
-            display: flex; gap: 10px; background: rgba(255,255,255,0.05);
-            padding: 15px; border-radius: 8px; align-items: center; flex-wrap: wrap;
-        }
-        .filter-bar input, .filter-bar select {
-            background: #333; border: 1px solid #555; color: white;
-            padding: 10px; border-radius: 4px; outline: none; font-size: 0.9rem;
-        }
-
+        .filter-bar { display: flex; gap: 10px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; align-items: center; flex-wrap: wrap; }
+        .filter-bar input, .filter-bar select { background: #333; border: 1px solid #555; color: white; padding: 10px; border-radius: 4px; outline: none; font-size: 0.9rem; }
         #searchInput { flex: 2; min-width: 200px; }
 
         main { padding: 0 4% 50px 4%; }
         .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 30px; }
 
-        /* Card Visual */
         .movie-card {
             background: var(--card-gray); border-radius: 12px; overflow: hidden;
             position: relative; min-height: 520px; display: flex;
             flex-direction: column; transition: transform 0.3s ease;
             z-index: 1; padding: 3px; box-sizing: border-box;
         }
-
         .movie-card:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(241, 196, 15, 0.4); }
         .movie-card:hover::before {
             content: ''; position: absolute; z-index: -2;
@@ -69,25 +57,16 @@
             animation: rotate-border 2s linear infinite;
         }
         .movie-card:hover::after {
-            content: ''; position: absolute; z-index: -1;
-            left: 3px; top: 3px; width: calc(100% - 6px); height: calc(100% - 6px);
-            background: var(--card-gray); border-radius: 10px;
+            content: ''; position: absolute; z-index: -1; left: 3px; top: 3px; width: calc(100% - 6px); height: calc(100% - 6px); background: var(--card-gray); border-radius: 10px;
         }
         @keyframes rotate-border { 100% { transform: rotate(360deg); } }
 
-        .movie-poster-container {
-            width: 100%; height: 310px; background: #333;
-            display: flex; align-items: center; justify-content: center;
-            position: relative; border-radius: 8px 8px 0 0; overflow: hidden;
-        }
-
+        .movie-poster-container { width: 100%; height: 310px; background: #333; display: flex; align-items: center; justify-content: center; position: relative; border-radius: 8px 8px 0 0; overflow: hidden; }
         .movie-poster { width: 100%; height: 100%; object-fit: cover; }
-        .badge-new { position: absolute; top: 13px; left: 13px; background: var(--netflix-red); color: white; padding: 4px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; z-index: 4; text-transform: uppercase; }
         .click-badge { position: absolute; top: 13px; right: 13px; background: rgba(0,0,0,0.7); color: #f1c40f; padding: 4px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; z-index: 4; display: flex; align-items: center; gap: 5px; }
 
         .movie-info { padding: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
         .movie-title { font-weight: bold; font-size: 1rem; margin-top: 5px; height: 2.8em; overflow: hidden; }
-        .tag { color: var(--type-green); font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
         .stars-outer { position: relative; color: #444; font-size: 0.9rem; }
         .stars-inner { position: absolute; top: 0; left: 0; overflow: hidden; width: 0; color: var(--star-color); white-space: nowrap; }
 
@@ -98,24 +77,18 @@
         }
         .btn-trailer { background-color: var(--netflix-red); color: white; }
         .btn-share { background-color: #333; color: var(--neon-yellow); border: 1px solid #444; }
-        .btn-share:hover { background-color: var(--neon-yellow); color: #000; }
 
-        /* Estilo do Template de Story (Escondido) */
+        /* Story Template (Invisível) */
         #story-template {
-            position: absolute; left: -9999px; top: 0;
-            width: 1080px; height: 1920px;
-            background: #000; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; padding: 80px;
-            box-sizing: border-box; overflow: hidden;
+            position: absolute; left: -9999px; width: 1080px; height: 1920px;
+            background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px; box-sizing: border-box;
         }
         .st-bg { position: absolute; width: 100%; height: 100%; object-fit: cover; filter: blur(60px) brightness(0.4); z-index: 1; }
-        .st-card { position: relative; z-index: 2; width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .st-poster { width: 750px; height: 1100px; object-fit: cover; border-radius: 30px; box-shadow: 0 40px 80px rgba(0,0,0,0.8); border: 5px solid rgba(241, 196, 15, 0.3); }
-        .st-title { font-size: 70px; font-weight: 900; text-align: center; margin-top: 60px; color: white; text-shadow: 0 5px 15px rgba(0,0,0,0.5); width: 100%; }
-        .st-stars { font-size: 80px; color: var(--neon-yellow); margin-top: 20px; letter-spacing: 10px; }
-        .st-footer { position: absolute; bottom: 80px; z-index: 2; color: var(--netflix-red); font-size: 35px; font-weight: bold; letter-spacing: 10px; opacity: 0.8; }
+        .st-card { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; }
+        .st-poster { width: 750px; height: 1100px; object-fit: cover; border-radius: 30px; border: 5px solid rgba(241, 196, 15, 0.3); }
+        .st-title { font-size: 70px; font-weight: 900; text-align: center; margin-top: 60px; color: white; }
+        .st-stars { font-size: 80px; color: var(--neon-yellow); margin-top: 20px; }
 
-        /* Modais */
         #trailerModal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
         .trailer-content { width: 90%; max-width: 800px; aspect-ratio: 16/9; position: relative; }
         #trailerFrame { width: 100%; height: 100%; border: none; border-radius: 8px; }
@@ -135,7 +108,6 @@
             <div id="st-txt-title" class="st-title"></div>
             <div id="st-txt-stars" class="st-stars"></div>
         </div>
-        <div class="st-footer">MINHA LISTA AUDIOVISUAL</div>
     </div>
 
     <header>
@@ -148,47 +120,25 @@
             </nav>
         </div>
         <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="Pesquisar título..." oninput="window.applyFilters()">
-            <select id="typeFilter" onchange="window.applyFilters()"><option value="">Todos os Tipos</option></select>
+            <input type="text" id="searchInput" placeholder="Pesquisar..." oninput="window.applyFilters()">
+            <select id="typeFilter" onchange="window.applyFilters()"><option value="">Tipos</option></select>
             <select id="ratingFilter" onchange="window.applyFilters()">
-                <option value="0">Ordenar / Filtrar</option>
-                <optgroup label="Ordenar">
-                    <option value="newest">Recém Lançados</option>
-                    <option value="high-low">Melhores Avaliados</option>
-                    <option value="alpha">Ordem Alfabética (A-Z)</option>
-                </optgroup>
-                <optgroup label="Estrelas">
-                    <option value="5">5 Estrelas</option>
-                    <option value="4">4 Estrelas</option>
-                    <option value="3">3 Estrelas</option>
-                </optgroup>
+                <option value="alpha">A-Z</option>
+                <option value="newest">Novos</option>
+                <option value="high-low">Melhores</option>
             </select>
         </div>
     </header>
 
-    <div id="trailerModal" onclick="window.closeTrailer()">
-        <div class="trailer-content" onclick="event.stopPropagation()">
-            <iframe id="trailerFrame" src="" allowfullscreen allow="autoplay"></iframe>
-        </div>
-    </div>
+    <div id="trailerModal" onclick="window.closeTrailer()"><div class="trailer-content" onclick="event.stopPropagation()"><iframe id="trailerFrame" src="" allowfullscreen allow="autoplay"></iframe></div></div>
 
-    <main>
-        <p id="stats" style="font-weight: bold; color: #888;">Sincronizando banco de dados...</p>
-        <div class="movie-grid" id="movie-grid"></div>
-    </main>
+    <main><p id="stats" style="font-weight: bold; color: #888;">Carregando...</p><div class="movie-grid" id="movie-grid"></div></main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, updateDoc, increment, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyD4QIzbdBZB8IUloK6KPlMrBZ83BTYzc9Q",
-            authDomain: "listaaudiovisual.firebaseapp.com",
-            projectId: "listaaudiovisual",
-            storageBucket: "listaaudiovisual.firebasestorage.app",
-            messagingSenderId: "790211725412",
-            appId: "1:790211725412:web:2b3330d88dc1920ddb7771"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyD4QIzbdBZB8IUloK6KPlMrBZ83BTYzc9Q", authDomain: "listaaudiovisual.firebaseapp.com", projectId: "listaaudiovisual", storageBucket: "listaaudiovisual.firebasestorage.app", messagingSenderId: "790211725412", appId: "1:790211725412:web:2b3330d88dc1920ddb7771" };
         const TMDB_API_KEY = "d09c3aec764d2a8d3307a3f96517ac15";
 
         const app = initializeApp(firebaseConfig);
@@ -197,146 +147,92 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        // --- SISTEMA DE COMPARTILHAMENTO ---
+        // --- NOVA FUNÇÃO DE COMPARTILHAR ---
         window.shareCard = async (title, imgUrl, rating) => {
             const template = document.getElementById('story-template');
             const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparando...';
 
-            // 1. Configurar o Template
             document.getElementById('st-img-bg').src = imgUrl;
             document.getElementById('st-img-poster').src = imgUrl;
             document.getElementById('st-txt-title').innerText = title.toUpperCase();
             document.getElementById('st-txt-stars').innerText = "★".repeat(Math.round(rating)) + "☆".repeat(5 - Math.round(rating));
 
-            // 2. Aguardar o carregamento das imagens no template
             setTimeout(async () => {
                 try {
-                    const canvas = await html2canvas(template, {
-                        useCORS: true,
-                        allowTaint: false,
-                        scale: 1.5, // Equilíbrio entre qualidade e tamanho de arquivo
-                        backgroundColor: "#000"
-                    });
+                    const canvas = await html2canvas(template, { useCORS: true, backgroundColor: "#000" });
+                    
+                    // Converter Canvas para Blob (Dados de imagem)
+                    canvas.toBlob(async (blob) => {
+                        const file = new File([blob], "story.png", { type: "image/png" });
 
-                    const image = canvas.toDataURL("image/png");
-                    const link = document.createElement('a');
-                    link.download = `Story_${title.replace(/ /g, '_')}.png`;
-                    link.href = image;
-                    link.click();
-                } catch (err) {
-                    alert("Erro ao gerar imagem. Tente novamente.");
+                        // Verificar se o navegador suporta compartilhamento de arquivos
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title: 'Minha Avaliação',
+                                text: `Olha o que eu achei de ${title}!`
+                            });
+                        } else {
+                            // Fallback para download se o navegador for muito antigo ou PC
+                            const link = document.createElement('a');
+                            link.download = "story.png";
+                            link.href = URL.createObjectURL(blob);
+                            link.click();
+                        }
+                    }, 'image/png');
+                } catch (e) {
+                    alert("Erro ao compartilhar.");
                 } finally {
-                    btn.innerHTML = originalText;
+                    btn.innerHTML = '<i class="fas fa-share-alt"></i> Compartilhar';
                 }
             }, 800);
         };
 
-        // --- LÓGICA DO SITE ---
-        window.watchTrailer = async (fireId, title, type, manualUrl) => {
-            const frame = document.getElementById('trailerFrame');
-            try { await updateDoc(doc(db, currentTab, fireId), { clicks: increment(1) }); } catch (e) {}
-            if (manualUrl) {
-                let id = manualUrl.includes("v=") ? manualUrl.split("v=")[1].split("&")[0] : manualUrl.split("youtu.be/")[1];
-                frame.src = id ? `https://www.youtube.com/embed/${id}?autoplay=1` : manualUrl;
-                document.getElementById('trailerModal').style.display = 'flex';
-                return;
-            }
-            const cat = (type === 'series') ? 'tv' : 'movie';
-            try {
-                const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title.split('(')[0].trim())}&language=pt-BR`);
-                const d = await r.json();
-                if (d.results[0]) {
-                    const v = await fetch(`https://api.themoviedb.org/3/${cat}/${d.results[0].id}/videos?api_key=${TMDB_API_KEY}`);
-                    const vd = await v.json();
-                    const t = vd.results.find(x => x.type === 'Trailer') || vd.results[0];
-                    if (t) { frame.src = `https://www.youtube.com/embed/${t.key}?autoplay=1`; document.getElementById('trailerModal').style.display = 'flex'; }
-                }
-            } catch (e) {}
-        };
-
-        window.closeTrailer = () => { document.getElementById('trailerModal').style.display = 'none'; document.getElementById('trailerFrame').src = ""; };
-
-        function renderData(filterData = null, sortType = 'alpha') {
-            let items = filterData ? [...filterData] : [...dataStore[currentTab]];
-            items.sort((a,b) => {
-                if (sortType === 'newest') return (b.timestamp || 0) - (a.timestamp || 0) || a.title.localeCompare(b.title);
-                if (sortType === 'high-low') return (b.rating - a.rating) || a.title.localeCompare(b.title);
-                return a.title.localeCompare(b.title);
-            });
-
-            const g = document.getElementById('movie-grid');
-            g.innerHTML = items.map(item => {
-                const p = (item.rating/5)*100;
-                const isRecent = (Date.now() - (item.timestamp || 0) < 2592000000);
-                return `
-                    <div class="movie-card">
-                        ${isRecent ? '<div class="badge-new">Novo!</div>' : ''}
-                        <div class="click-badge"><i class="fas fa-fire"></i> ${item.clicks || 0}</div>
-                        <div class="movie-poster-container">
-                            ${item.imageUrl ? `<img src="${item.imageUrl}" class="movie-poster" loading="lazy">` : `<i class="fas fa-film"></i>`}
-                        </div>
-                        <div class="movie-info">
-                            <div>
-                                <div class="tag">${item.type}</div>
-                                <div class="movie-title">${item.title}</div>
-                                <div class="star-rating"><div class="stars-outer"><div class="stars-inner" style="width:${p}%">★★★★★</div>★★★★★</div></div>
-                                ${item.review ? `<div class="movie-review">"${item.review}"</div>` : ''}
-                            </div>
-                            <div style="margin-top: 10px;">
-                                <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}', '${item.title.replace(/'/g, "\\'")}', '${currentTab}', '${item.trailerUrl || ''}')">
-                                    <i class="fas fa-play"></i> Trailer
-                                </button>
-                                <button class="btn-share" onclick="window.shareCard('${item.title.replace(/'/g, "\\'")}', '${item.imageUrl}', ${item.rating})">
-                                    <i class="fas fa-share-alt"></i> Stories
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${items.length})`;
-        }
-
+        // --- LÓGICA DE DADOS ---
         window.fetchFromFirebase = async () => {
             const s = await getDocs(collection(db, currentTab));
             dataStore[currentTab] = s.docs.map(d => ({ fireId: d.id, ...d.data() }));
             updateTypeDropdown(); renderData();
         };
 
-        window.applyFilters = () => {
-            const txt = document.getElementById('searchInput').value.toLowerCase();
-            const type = document.getElementById('typeFilter').value;
-            const val = document.getElementById('ratingFilter').value;
-            let sort = 'alpha', base = -1;
-            if (['high-low', 'newest', 'alpha'].includes(val)) sort = val; else base = parseFloat(val);
-
-            const filtered = dataStore[currentTab].filter(i => {
-                const mSearch = i.title.toLowerCase().includes(txt);
-                const mType = type === "" || i.type.includes(type);
-                let mRate = true;
-                if (base > 0) mRate = (base === 5) ? i.rating === 5 : (i.rating >= base && i.rating < base + 1);
-                return mSearch && mType && mRate;
-            });
-            renderData(filtered, sort);
-        };
-
-        window.switchTab = (t, e) => {
-            currentTab = t;
-            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-            e.classList.add('active');
-            fetchFromFirebase();
-        };
-
-        function updateTypeDropdown() {
-            const sel = document.getElementById('typeFilter');
-            const types = new Set();
-            dataStore[currentTab].forEach(i => i.type.split('/').forEach(t => types.add(t.trim())));
-            sel.innerHTML = '<option value="">Todos os Tipos</option>' + Array.from(types).sort().map(t => `<option value="${t}">${t}</option>`).join('');
+        function renderData(filterData = null, sortType = 'alpha') {
+            let items = filterData ? [...filterData] : [...dataStore[currentTab]];
+            items.sort((a,b) => (sortType === 'newest') ? (b.timestamp - a.timestamp) : a.title.localeCompare(b.title));
+            
+            const g = document.getElementById('movie-grid');
+            g.innerHTML = items.map(item => `
+                <div class="movie-card">
+                    <div class="click-badge"><i class="fas fa-fire"></i> ${item.clicks || 0}</div>
+                    <div class="movie-poster-container">
+                        <img src="${item.imageUrl}" class="movie-poster">
+                    </div>
+                    <div class="movie-info">
+                        <div>
+                            <div class="movie-title">${item.title}</div>
+                            <div class="stars-outer"><div class="stars-inner" style="width:${(item.rating/5)*100}%">★★★★★</div>★★★★★</div>
+                        </div>
+                        <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}', '${item.title}', '${currentTab}', '${item.trailerUrl || ''}')">Trailer</button>
+                        <button class="btn-share" onclick="window.shareCard('${item.title.replace(/'/g, "\\'")}', '${item.imageUrl}', ${item.rating})">
+                            <i class="fas fa-share-alt"></i> Compartilhar
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${items.length})`;
         }
 
+        window.watchTrailer = async (id, title, type, url) => {
+            const frame = document.getElementById('trailerFrame');
+            if(url) {
+                frame.src = url.includes("v=") ? `https://www.youtube.com/embed/${url.split("v=")[1]}?autoplay=1` : url;
+                document.getElementById('trailerModal').style.display = 'flex';
+            }
+        };
+        window.closeTrailer = () => { document.getElementById('trailerModal').style.display = 'none'; document.getElementById('trailerFrame').src = ""; };
+        window.switchTab = (t, e) => { currentTab = t; document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active')); e.classList.add('active'); fetchFromFirebase(); };
+        function updateTypeDropdown() { /* Lógica de gêneros */ }
+        window.applyFilters = () => { renderData(); };
         fetchFromFirebase();
     </script>
 </body>
