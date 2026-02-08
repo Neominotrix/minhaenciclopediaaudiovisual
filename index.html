@@ -45,7 +45,7 @@
 
         .movie-card {
             background: var(--card-gray); border-radius: 12px; overflow: hidden;
-            position: relative; min-height: 520px; display: flex;
+            position: relative; min-height: 550px; display: flex;
             flex-direction: column; transition: transform 0.3s ease;
             z-index: 1; padding: 3px; box-sizing: border-box;
         }
@@ -67,8 +67,11 @@
 
         .movie-info { padding: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
         .movie-title { font-weight: bold; font-size: 1rem; margin-top: 5px; height: 2.8em; overflow: hidden; }
-        .stars-outer { position: relative; color: #444; font-size: 0.9rem; }
+        .stars-outer { position: relative; color: #444; font-size: 0.9rem; margin-bottom: 8px; }
         .stars-inner { position: absolute; top: 0; left: 0; overflow: hidden; width: 0; color: var(--star-color); white-space: nowrap; }
+
+        /* Estilo do Comentário Reativado */
+        .movie-review { font-size: 0.85rem; color: #ccc; font-style: italic; border-top: 1px solid #333; padding-top: 10px; margin-top: 5px; line-height: 1.4; word-wrap: break-word; }
 
         .btn-trailer, .btn-share {
             border: none; padding: 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;
@@ -95,145 +98,4 @@
 
         @media (max-width: 768px) {
             body { padding-top: 210px; }
-            .movie-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
-        }
-    </style>
-</head>
-<body>
-
-    <div id="story-template">
-        <img id="st-img-bg" class="st-bg">
-        <div class="st-card">
-            <img id="st-img-poster" class="st-poster">
-            <div id="st-txt-title" class="st-title"></div>
-            <div id="st-txt-stars" class="st-stars"></div>
-        </div>
-    </div>
-
-    <header>
-        <div class="header-main">
-            <h1>MINHA LISTA</h1>
-            <nav>
-                <div class="nav-link active" onclick="window.switchTab('filmes', this)">Filmes</div>
-                <div class="nav-link" onclick="window.switchTab('series', this)">Séries</div>
-                <div class="nav-link" onclick="window.switchTab('animacoes', this)">Animações</div>
-            </nav>
-        </div>
-        <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="Pesquisar..." oninput="window.applyFilters()">
-            <select id="typeFilter" onchange="window.applyFilters()"><option value="">Tipos</option></select>
-            <select id="ratingFilter" onchange="window.applyFilters()">
-                <option value="alpha">A-Z</option>
-                <option value="newest">Novos</option>
-                <option value="high-low">Melhores</option>
-            </select>
-        </div>
-    </header>
-
-    <div id="trailerModal" onclick="window.closeTrailer()"><div class="trailer-content" onclick="event.stopPropagation()"><iframe id="trailerFrame" src="" allowfullscreen allow="autoplay"></iframe></div></div>
-
-    <main><p id="stats" style="font-weight: bold; color: #888;">Carregando...</p><div class="movie-grid" id="movie-grid"></div></main>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, increment, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        const firebaseConfig = { apiKey: "AIzaSyD4QIzbdBZB8IUloK6KPlMrBZ83BTYzc9Q", authDomain: "listaaudiovisual.firebaseapp.com", projectId: "listaaudiovisual", storageBucket: "listaaudiovisual.firebasestorage.app", messagingSenderId: "790211725412", appId: "1:790211725412:web:2b3330d88dc1920ddb7771" };
-        const TMDB_API_KEY = "d09c3aec764d2a8d3307a3f96517ac15";
-
-        const app = initializeApp(firebaseConfig);
-        const db = initializeFirestore(app, { experimentalForceLongPolling: true });
-
-        let dataStore = { filmes: [], series: [], animacoes: [] };
-        let currentTab = 'filmes';
-
-        // --- NOVA FUNÇÃO DE COMPARTILHAR ---
-        window.shareCard = async (title, imgUrl, rating) => {
-            const template = document.getElementById('story-template');
-            const btn = event.currentTarget;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparando...';
-
-            document.getElementById('st-img-bg').src = imgUrl;
-            document.getElementById('st-img-poster').src = imgUrl;
-            document.getElementById('st-txt-title').innerText = title.toUpperCase();
-            document.getElementById('st-txt-stars').innerText = "★".repeat(Math.round(rating)) + "☆".repeat(5 - Math.round(rating));
-
-            setTimeout(async () => {
-                try {
-                    const canvas = await html2canvas(template, { useCORS: true, backgroundColor: "#000" });
-                    
-                    // Converter Canvas para Blob (Dados de imagem)
-                    canvas.toBlob(async (blob) => {
-                        const file = new File([blob], "story.png", { type: "image/png" });
-
-                        // Verificar se o navegador suporta compartilhamento de arquivos
-                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await navigator.share({
-                                files: [file],
-                                title: 'Minha Avaliação',
-                                text: `Olha o que eu achei de ${title}!`
-                            });
-                        } else {
-                            // Fallback para download se o navegador for muito antigo ou PC
-                            const link = document.createElement('a');
-                            link.download = "story.png";
-                            link.href = URL.createObjectURL(blob);
-                            link.click();
-                        }
-                    }, 'image/png');
-                } catch (e) {
-                    alert("Erro ao compartilhar.");
-                } finally {
-                    btn.innerHTML = '<i class="fas fa-share-alt"></i> Compartilhar';
-                }
-            }, 800);
-        };
-
-        // --- LÓGICA DE DADOS ---
-        window.fetchFromFirebase = async () => {
-            const s = await getDocs(collection(db, currentTab));
-            dataStore[currentTab] = s.docs.map(d => ({ fireId: d.id, ...d.data() }));
-            updateTypeDropdown(); renderData();
-        };
-
-        function renderData(filterData = null, sortType = 'alpha') {
-            let items = filterData ? [...filterData] : [...dataStore[currentTab]];
-            items.sort((a,b) => (sortType === 'newest') ? (b.timestamp - a.timestamp) : a.title.localeCompare(b.title));
-            
-            const g = document.getElementById('movie-grid');
-            g.innerHTML = items.map(item => `
-                <div class="movie-card">
-                    <div class="click-badge"><i class="fas fa-fire"></i> ${item.clicks || 0}</div>
-                    <div class="movie-poster-container">
-                        <img src="${item.imageUrl}" class="movie-poster">
-                    </div>
-                    <div class="movie-info">
-                        <div>
-                            <div class="movie-title">${item.title}</div>
-                            <div class="stars-outer"><div class="stars-inner" style="width:${(item.rating/5)*100}%">★★★★★</div>★★★★★</div>
-                        </div>
-                        <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}', '${item.title}', '${currentTab}', '${item.trailerUrl || ''}')">Trailer</button>
-                        <button class="btn-share" onclick="window.shareCard('${item.title.replace(/'/g, "\\'")}', '${item.imageUrl}', ${item.rating})">
-                            <i class="fas fa-share-alt"></i> Compartilhar
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-            document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${items.length})`;
-        }
-
-        window.watchTrailer = async (id, title, type, url) => {
-            const frame = document.getElementById('trailerFrame');
-            if(url) {
-                frame.src = url.includes("v=") ? `https://www.youtube.com/embed/${url.split("v=")[1]}?autoplay=1` : url;
-                document.getElementById('trailerModal').style.display = 'flex';
-            }
-        };
-        window.closeTrailer = () => { document.getElementById('trailerModal').style.display = 'none'; document.getElementById('trailerFrame').src = ""; };
-        window.switchTab = (t, e) => { currentTab = t; document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active')); e.classList.add('active'); fetchFromFirebase(); };
-        function updateTypeDropdown() { /* Lógica de gêneros */ }
-        window.applyFilters = () => { renderData(); };
-        fetchFromFirebase();
-    </script>
-</body>
-</html>
+            .movie-grid { grid-template-columns: repeat(auto-fill, minmax
