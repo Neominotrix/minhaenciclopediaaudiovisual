@@ -98,4 +98,135 @@
 
         @media (max-width: 768px) {
             body { padding-top: 210px; }
-            .movie-grid { grid-template-columns: repeat(auto-fill, minmax
+            .movie-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="story-template">
+        <img id="st-img-bg" class="st-bg">
+        <div class="st-card">
+            <img id="st-img-poster" class="st-poster">
+            <div id="st-txt-title" class="st-title"></div>
+            <div id="st-txt-stars" class="st-stars"></div>
+        </div>
+    </div>
+
+    <header>
+        <div class="header-main">
+            <h1>MINHA LISTA</h1>
+            <nav>
+                <div class="nav-link active" onclick="window.switchTab('filmes', this)">Filmes</div>
+                <div class="nav-link" onclick="window.switchTab('series', this)">Séries</div>
+                <div class="nav-link" onclick="window.switchTab('animacoes', this)">Animações</div>
+            </nav>
+        </div>
+        <div class="filter-bar">
+            <input type="text" id="searchInput" placeholder="Pesquisar..." oninput="window.applyFilters()">
+            <select id="typeFilter" onchange="window.applyFilters()"><option value="">Tipos</option></select>
+            <select id="ratingFilter" onchange="window.applyFilters()">
+                <option value="alpha">A-Z</option>
+                <option value="newest">Novos</option>
+                <option value="high-low">Melhores</option>
+            </select>
+        </div>
+    </header>
+
+    <div id="trailerModal" onclick="window.closeTrailer()"><div class="trailer-content" onclick="event.stopPropagation()"><iframe id="trailerFrame" src="" allowfullscreen allow="autoplay"></iframe></div></div>
+
+    <main><p id="stats" style="font-weight: bold; color: #888;">Carregando...</p><div class="movie-grid" id="movie-grid"></div></main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, increment, initializeFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyD4QIzbdBZB8IUloK6KPlMrBZ83BTYzc9Q", authDomain: "listaaudiovisual.firebaseapp.com", projectId: "listaaudiovisual", storageBucket: "listaaudiovisual.firebasestorage.app", messagingSenderId: "790211725412", appId: "1:790211725412:web:2b3330d88dc1920ddb7771" };
+        const TMDB_API_KEY = "d09c3aec764d2a8d3307a3f96517ac15";
+
+        const app = initializeApp(firebaseConfig);
+        const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+        let dataStore = { filmes: [], series: [], animacoes: [] };
+        let currentTab = 'filmes';
+
+        window.shareCard = async (title, imgUrl, rating) => {
+            const template = document.getElementById('story-template');
+            const btn = event.currentTarget;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparando...';
+
+            document.getElementById('st-img-bg').src = imgUrl;
+            document.getElementById('st-img-poster').src = imgUrl;
+            document.getElementById('st-txt-title').innerText = title.toUpperCase();
+            document.getElementById('st-txt-stars').innerText = "★".repeat(Math.round(rating)) + "☆".repeat(5 - Math.round(rating));
+
+            setTimeout(async () => {
+                try {
+                    const canvas = await html2canvas(template, { useCORS: true, backgroundColor: "#000" });
+                    canvas.toBlob(async (blob) => {
+                        const file = new File([blob], "story.png", { type: "image/png" });
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await navigator.share({ files: [file], title: 'Minha Avaliação', text: `Olha o que eu achei de ${title}!` });
+                        } else {
+                            const link = document.createElement('a');
+                            link.download = "story.png";
+                            link.href = URL.createObjectURL(blob);
+                            link.click();
+                        }
+                    }, 'image/png');
+                } catch (e) { alert("Erro ao compartilhar."); } 
+                finally { btn.innerHTML = '<i class="fas fa-share-alt"></i> Compartilhar'; }
+            }, 800);
+        };
+
+        window.fetchFromFirebase = async () => {
+            const s = await getDocs(collection(db, currentTab));
+            dataStore[currentTab] = s.docs.map(d => ({ fireId: d.id, ...d.data() }));
+            renderData();
+        };
+
+        function renderData(filterData = null, sortType = 'alpha') {
+            let items = filterData ? [...filterData] : [...dataStore[currentTab]];
+            items.sort((a,b) => (sortType === 'newest') ? (b.timestamp - a.timestamp) : a.title.localeCompare(b.title));
+            
+            const g = document.getElementById('movie-grid');
+            g.innerHTML = items.map(item => `
+                <div class="movie-card">
+                    <div class="click-badge"><i class="fas fa-fire"></i> ${item.clicks || 0}</div>
+                    <div class="movie-poster-container">
+                        <img src="${item.imageUrl}" class="movie-poster">
+                    </div>
+                    <div class="movie-info">
+                        <div>
+                            <div class="movie-title">${item.title}</div>
+                            <div class="stars-outer"><div class="stars-inner" style="width:${(item.rating/5)*100}%">★★★★★</div>★★★★★</div>
+                            ${item.review ? `<div class="movie-review">"${item.review}"</div>` : ''}
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}', '${item.title}', '${currentTab}', '${item.trailerUrl || ''}')">Trailer</button>
+                            <button class="btn-share" onclick="window.shareCard('${item.title.replace(/'/g, "\\'")}', '${item.imageUrl}', ${item.rating})">
+                                <i class="fas fa-share-alt"></i> Compartilhar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('stats').innerText = `${currentTab.toUpperCase()} (${items.length})`;
+        }
+
+        window.watchTrailer = async (id, title, type, url) => {
+            const frame = document.getElementById('trailerFrame');
+            if(url) {
+                let yId = url.includes("v=") ? url.split("v=")[1].split("&")[0] : url.split("youtu.be/")[1];
+                frame.src = yId ? `https://www.youtube.com/embed/${yId}?autoplay=1` : url;
+                document.getElementById('trailerModal').style.display = 'flex';
+                try { await updateDoc(doc(db, currentTab, id), { clicks: increment(1) }); } catch(e){}
+            }
+        };
+        window.closeTrailer = () => { document.getElementById('trailerModal').style.display = 'none'; document.getElementById('trailerFrame').src = ""; };
+        window.switchTab = (t, e) => { currentTab = t; document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active')); e.classList.add('active'); fetchFromFirebase(); };
+        window.applyFilters = () => { renderData(); };
+        fetchFromFirebase();
+    </script>
+</body>
+</html>
