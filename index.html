@@ -70,7 +70,6 @@
         .stars-outer { position: relative; color: #444; font-size: 0.9rem; margin-bottom: 8px; }
         .stars-inner { position: absolute; top: 0; left: 0; overflow: hidden; width: 0; color: var(--star-color); white-space: nowrap; }
 
-        /* Estilo do Comentário Reativado */
         .movie-review { font-size: 0.85rem; color: #ccc; font-style: italic; border-top: 1px solid #333; padding-top: 10px; margin-top: 5px; line-height: 1.4; word-wrap: break-word; }
 
         .btn-trailer, .btn-share {
@@ -81,16 +80,19 @@
         .btn-trailer { background-color: var(--netflix-red); color: white; }
         .btn-share { background-color: #333; color: var(--neon-yellow); border: 1px solid #444; }
 
-        /* Story Template (Invisível) */
+        /* Story Template Corrigido */
         #story-template {
             position: absolute; left: -9999px; width: 1080px; height: 1920px;
             background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px; box-sizing: border-box;
         }
         .st-bg { position: absolute; width: 100%; height: 100%; object-fit: cover; filter: blur(60px) brightness(0.4); z-index: 1; }
-        .st-card { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; }
-        .st-poster { width: 750px; height: 1100px; object-fit: cover; border-radius: 30px; border: 5px solid rgba(241, 196, 15, 0.3); }
-        .st-title { font-size: 70px; font-weight: 900; text-align: center; margin-top: 60px; color: white; }
-        .st-stars { font-size: 80px; color: var(--neon-yellow); margin-top: 20px; }
+        .st-card { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .st-poster { width: 700px; height: 1050px; object-fit: cover; border-radius: 30px; border: 5px solid var(--neon-yellow); box-shadow: 0 40px 80px rgba(0,0,0,0.8); }
+        .st-title { font-size: 70px; font-weight: 900; text-align: center; margin-top: 50px; color: white; width: 900px; text-transform: uppercase; }
+        .st-stars { font-size: 80px; color: var(--neon-yellow); margin-top: 10px; }
+        /* Novo campo de comentário no Story */
+        .st-review { font-size: 40px; color: #ddd; font-style: italic; text-align: center; margin-top: 40px; width: 850px; line-height: 1.4; border-top: 2px solid #333; padding-top: 30px; }
+        .st-footer { position: absolute; bottom: 80px; z-index: 2; color: var(--netflix-red); font-size: 35px; font-weight: bold; letter-spacing: 10px; opacity: 0.8; }
 
         #trailerModal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
         .trailer-content { width: 90%; max-width: 800px; aspect-ratio: 16/9; position: relative; }
@@ -105,12 +107,14 @@
 <body>
 
     <div id="story-template">
-        <img id="st-img-bg" class="st-bg">
+        <img id="st-img-bg" class="st-bg" crossorigin="anonymous">
         <div class="st-card">
-            <img id="st-img-poster" class="st-poster">
+            <img id="st-img-poster" class="st-poster" crossorigin="anonymous">
             <div id="st-txt-title" class="st-title"></div>
             <div id="st-txt-stars" class="st-stars"></div>
+            <div id="st-txt-review" class="st-review"></div>
         </div>
+        <div class="st-footer">MINHA LISTA AUDIOVISUAL</div>
     </div>
 
     <header>
@@ -135,7 +139,7 @@
 
     <div id="trailerModal" onclick="window.closeTrailer()"><div class="trailer-content" onclick="event.stopPropagation()"><iframe id="trailerFrame" src="" allowfullscreen allow="autoplay"></iframe></div></div>
 
-    <main><p id="stats" style="font-weight: bold; color: #888;">Carregando...</p><div class="movie-grid" id="movie-grid"></div></main>
+    <main><p id="stats" style="font-weight: bold; color: #888;">Sincronizando...</p><div class="movie-grid" id="movie-grid"></div></main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -150,23 +154,36 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        window.shareCard = async (title, imgUrl, rating) => {
+        // --- FUNÇÃO DE COMPARTILHAR ATUALIZADA ---
+        window.shareCard = async (title, imgUrl, rating, review) => {
             const template = document.getElementById('story-template');
             const btn = event.currentTarget;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparando...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
 
+            // Inserir dados no molde (Incluindo o Review)
             document.getElementById('st-img-bg').src = imgUrl;
             document.getElementById('st-img-poster').src = imgUrl;
-            document.getElementById('st-txt-title').innerText = title.toUpperCase();
+            document.getElementById('st-txt-title').innerText = title;
             document.getElementById('st-txt-stars').innerText = "★".repeat(Math.round(rating)) + "☆".repeat(5 - Math.round(rating));
+            document.getElementById('st-txt-review').innerText = review ? `"${review}"` : "";
 
+            // Ocultar review no story se estiver vazio
+            document.getElementById('st-txt-review').style.display = review ? 'block' : 'none';
+
+            // Pequeno delay para garantir que as imagens com CORS carreguem no template
             setTimeout(async () => {
                 try {
-                    const canvas = await html2canvas(template, { useCORS: true, backgroundColor: "#000" });
+                    const canvas = await html2canvas(template, { 
+                        useCORS: true, 
+                        allowTaint: false,
+                        backgroundColor: "#000",
+                        scale: 2 
+                    });
+                    
                     canvas.toBlob(async (blob) => {
                         const file = new File([blob], "story.png", { type: "image/png" });
                         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await navigator.share({ files: [file], title: 'Minha Avaliação', text: `Olha o que eu achei de ${title}!` });
+                            await navigator.share({ files: [file], title: 'Minha Lista', text: `Avaliei ${title}!` });
                         } else {
                             const link = document.createElement('a');
                             link.download = "story.png";
@@ -174,9 +191,13 @@
                             link.click();
                         }
                     }, 'image/png');
-                } catch (e) { alert("Erro ao compartilhar."); } 
-                finally { btn.innerHTML = '<i class="fas fa-share-alt"></i> Compartilhar'; }
-            }, 800);
+                } catch (e) { 
+                    console.error(e);
+                    alert("Erro ao processar imagem."); 
+                } finally { 
+                    btn.innerHTML = '<i class="fas fa-share-alt"></i> Compartilhar'; 
+                }
+            }, 1000);
         };
 
         window.fetchFromFirebase = async () => {
@@ -194,7 +215,7 @@
                 <div class="movie-card">
                     <div class="click-badge"><i class="fas fa-fire"></i> ${item.clicks || 0}</div>
                     <div class="movie-poster-container">
-                        <img src="${item.imageUrl}" class="movie-poster">
+                        <img src="${item.imageUrl}" class="movie-poster" crossorigin="anonymous">
                     </div>
                     <div class="movie-info">
                         <div>
@@ -204,7 +225,7 @@
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 5px;">
                             <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}', '${item.title}', '${currentTab}', '${item.trailerUrl || ''}')">Trailer</button>
-                            <button class="btn-share" onclick="window.shareCard('${item.title.replace(/'/g, "\\'")}', '${item.imageUrl}', ${item.rating})">
+                            <button class="btn-share" onclick="window.shareCard('${item.title.replace(/'/g, "\\'")}', '${item.imageUrl}', ${item.rating}, '${(item.review || "").replace(/'/g, "\\'")}')">
                                 <i class="fas fa-share-alt"></i> Compartilhar
                             </button>
                         </div>
