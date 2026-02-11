@@ -80,19 +80,24 @@
         .btn-trailer { background-color: var(--netflix-red); color: white; }
         .btn-share { background-color: #333; color: var(--neon-yellow); border: 1px solid #444; }
 
-        /* Story Template (Fundo Preto Sólido) */
+        /* --- Story Template Layout --- */
         #story-template {
             position: absolute; left: -9999px; width: 1080px; height: 1920px;
-            background: #000; /* Fundo preto sólido */
-            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px; box-sizing: border-box;
+            background: #000; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 180px 80px 80px 80px; box-sizing: border-box;
         }
-        /* .st-bg removido daqui */
+        
+        /* Nova Frase no Topo */
+        .st-header { 
+            position: absolute; top: 80px; z-index: 2; 
+            color: var(--netflix-red); font-size: 35px; font-weight: bold; 
+            letter-spacing: 10px; opacity: 0.8; text-align: center; width: 100%; 
+        }
+
         .st-card { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 100%; }
         .st-poster { width: 700px; height: 1050px; object-fit: cover; border-radius: 30px; border: 5px solid var(--neon-yellow); box-shadow: 0 40px 80px rgba(0,0,0,0.8); }
-        .st-title { font-size: 70px; font-weight: 900; text-align: center; margin-top: 50px; color: white; width: 900px; text-transform: uppercase; }
+        .st-title { font-size: 65px; font-weight: 900; text-align: center; margin-top: 50px; color: white; width: 950px; text-transform: uppercase; line-height: 1.1; }
         .st-stars { font-size: 80px; color: var(--neon-yellow); margin-top: 10px; }
         .st-review { font-size: 40px; color: #ddd; font-style: italic; text-align: center; margin-top: 40px; width: 850px; line-height: 1.4; border-top: 2px solid #333; padding-top: 30px; }
-        .st-footer { position: absolute; bottom: 80px; z-index: 2; color: var(--netflix-red); font-size: 35px; font-weight: bold; letter-spacing: 10px; opacity: 0.8; }
 
         #trailerModal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
         .trailer-content { width: 90%; max-width: 800px; aspect-ratio: 16/9; position: relative; }
@@ -107,13 +112,13 @@
 <body>
 
     <div id="story-template">
+        <div class="st-header">MINHA LISTA AUDIOVISUAL</div>
         <div class="st-card">
             <img id="st-img-poster" class="st-poster" crossorigin="anonymous">
             <div id="st-txt-title" class="st-title"></div>
             <div id="st-txt-stars" class="st-stars"></div>
             <div id="st-txt-review" class="st-review"></div>
         </div>
-        <div class="st-footer">MINHA LISTA AUDIOVISUAL</div>
     </div>
 
     <header>
@@ -160,7 +165,6 @@
 
             const cleanImgUrl = imgUrl + (imgUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
 
-            // Removido a linha que setava o st-img-bg
             document.getElementById('st-img-poster').src = cleanImgUrl;
             document.getElementById('st-txt-title').innerText = title;
             document.getElementById('st-txt-stars').innerText = "★".repeat(Math.round(rating)) + "☆".repeat(5 - Math.round(rating));
