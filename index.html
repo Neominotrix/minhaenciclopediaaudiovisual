@@ -80,12 +80,13 @@
         .btn-trailer { background-color: var(--netflix-red); color: white; }
         .btn-share { background-color: #333; color: var(--neon-yellow); border: 1px solid #444; }
 
-        /* Story Template */
+        /* Story Template (Fundo Preto Sólido) */
         #story-template {
             position: absolute; left: -9999px; width: 1080px; height: 1920px;
-            background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px; box-sizing: border-box;
+            background: #000; /* Fundo preto sólido */
+            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px; box-sizing: border-box;
         }
-        .st-bg { position: absolute; width: 100%; height: 100%; object-fit: cover; filter: blur(60px) brightness(0.4); z-index: 1; }
+        /* .st-bg removido daqui */
         .st-card { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 100%; }
         .st-poster { width: 700px; height: 1050px; object-fit: cover; border-radius: 30px; border: 5px solid var(--neon-yellow); box-shadow: 0 40px 80px rgba(0,0,0,0.8); }
         .st-title { font-size: 70px; font-weight: 900; text-align: center; margin-top: 50px; color: white; width: 900px; text-transform: uppercase; }
@@ -106,7 +107,6 @@
 <body>
 
     <div id="story-template">
-        <img id="st-img-bg" class="st-bg" crossorigin="anonymous">
         <div class="st-card">
             <img id="st-img-poster" class="st-poster" crossorigin="anonymous">
             <div id="st-txt-title" class="st-title"></div>
@@ -158,10 +158,9 @@
             const btn = event.currentTarget;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
 
-            // Truque do Cache-Buster: Adiciona um número único no final da URL para forçar o download limpo para o Story
             const cleanImgUrl = imgUrl + (imgUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
 
-            document.getElementById('st-img-bg').src = cleanImgUrl;
+            // Removido a linha que setava o st-img-bg
             document.getElementById('st-img-poster').src = cleanImgUrl;
             document.getElementById('st-txt-title').innerText = title;
             document.getElementById('st-txt-stars').innerText = "★".repeat(Math.round(rating)) + "☆".repeat(5 - Math.round(rating));
