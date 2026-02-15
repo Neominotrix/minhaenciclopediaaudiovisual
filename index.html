@@ -63,6 +63,9 @@
 
         .movie-poster-container { width: 100%; height: 310px; background: #333; display: flex; align-items: center; justify-content: center; position: relative; border-radius: 8px 8px 0 0; overflow: hidden; }
         .movie-poster { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Selos: Novo e Fogo */
+        .badge-new { position: absolute; top: 13px; left: 13px; background: var(--netflix-red); color: white; padding: 4px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; z-index: 4; text-transform: uppercase; }
         .click-badge { position: absolute; top: 13px; right: 13px; background: rgba(0,0,0,0.7); color: #f1c40f; padding: 4px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; z-index: 4; display: flex; align-items: center; gap: 5px; }
 
         .movie-info { padding: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
@@ -83,7 +86,7 @@
         .btn-trailer { background-color: var(--netflix-red); color: white; }
         .btn-share { background-color: #333; color: var(--neon-yellow); border: 1px solid #444; }
 
-        /* --- Story Template --- */
+        /* Story Template */
         #story-template {
             position: absolute; left: -9999px; width: 1080px; height: 1920px;
             background: #000; display: flex; flex-direction: column; align-items: center; 
@@ -167,20 +170,16 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        // --- SISTEMA DE TRAILER (COM BUSCA AUTOMÁTICA) ---
+        // --- TRAILER ---
         window.watchTrailer = async (fireId) => {
             const item = dataStore[currentTab].find(i => i.fireId === fireId);
             if (!item) return;
-
             const frame = document.getElementById('trailerFrame');
             const btn = event.currentTarget;
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-            // 1. Registrar o click no Firebase
             try { await updateDoc(doc(db, currentTab, fireId), { clicks: increment(1) }); } catch(e){}
 
-            // 2. Se houver link manual, usa ele
             if (item.trailerUrl && item.trailerUrl.trim() !== "") {
                 let yId = item.trailerUrl.includes("v=") ? item.trailerUrl.split("v=")[1].split("&")[0] : item.trailerUrl.split("youtu.be/")[1];
                 frame.src = yId ? `https://www.youtube.com/embed/${yId}?autoplay=1` : item.trailerUrl;
@@ -189,7 +188,6 @@
                 return;
             }
 
-            // 3. Caso contrário, busca no TMDB
             const cat = (currentTab === 'series') ? 'tv' : 'movie';
             try {
                 const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(item.title)}&language=pt-BR`);
@@ -198,16 +196,13 @@
                     const v = await fetch(`https://api.themoviedb.org/3/${cat}/${d.results[0].id}/videos?api_key=${TMDB_API_KEY}`);
                     const vd = await v.json();
                     const t = vd.results.find(x => x.type === 'Trailer') || vd.results[0];
-                    if (t) {
-                        frame.src = `https://www.youtube.com/embed/${t.key}?autoplay=1`;
-                        document.getElementById('trailerModal').style.display = 'flex';
-                    } else { alert("Trailer não encontrado."); }
-                } else { alert("Obra não encontrada para busca de trailer."); }
-            } catch (e) { alert("Erro ao buscar trailer."); }
+                    if (t) { frame.src = `https://www.youtube.com/embed/${t.key}?autoplay=1`; document.getElementById('trailerModal').style.display = 'flex'; }
+                }
+            } catch (e) {}
             btn.innerHTML = originalText;
         };
 
-        // --- SISTEMA DE COMPARTILHAMENTO ---
+        // --- COMPARTILHAR ---
         window.shareCard = async (fireId) => {
             const item = dataStore[currentTab].find(i => i.fireId === fireId);
             if (!item) return;
@@ -237,12 +232,12 @@
                             const link = document.createElement('a'); link.download = "story.png"; link.href = URL.createObjectURL(blob); link.click();
                         }
                     }, 'image/png');
-                } catch (e) { alert("Erro na imagem."); } 
+                } catch (e) { alert("Erro!"); } 
                 finally { btn.innerHTML = originalHtml; }
             }, 1000);
         };
 
-        // --- FILTROS E RENDERIZAÇÃO ---
+        // --- FILTROS ---
         window.fetchFromFirebase = async () => {
             const s = await getDocs(collection(db, currentTab));
             dataStore[currentTab] = s.docs.map(d => ({ fireId: d.id, ...d.data() }));
@@ -280,8 +275,13 @@
             g.innerHTML = items.map(item => {
                 const ratingVal = parseFloat(item.rating || 0);
                 const starWidth = (ratingVal / 5) * 100;
+                
+                // CÁLCULO DO SELO NOVO (30 dias)
+                const isRecent = (Date.now() - (item.timestamp || 0) < 2592000000);
+
                 return `
                     <div class="movie-card">
+                        ${isRecent ? '<div class="badge-new">Novo!</div>' : ''}
                         <div class="click-badge"><i class="fas fa-fire"></i> ${item.clicks || 0}</div>
                         <div class="movie-poster-container"><img src="${item.imageUrl}" class="movie-poster"></div>
                         <div class="movie-info">
@@ -294,12 +294,8 @@
                                 ${item.review ? `<div class="movie-review">${item.review.replace(/\n/g, '<br>')}</div>` : ''}
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 5px;">
-                                <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}')">
-                                    <i class="fas fa-play"></i> Trailer
-                                </button>
-                                <button class="btn-share" onclick="window.shareCard('${item.fireId}')">
-                                    <i class="fas fa-share-alt"></i> Compartilhar
-                                </button>
+                                <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}')">Trailer</button>
+                                <button class="btn-share" onclick="window.shareCard('${item.fireId}')">Compartilhar</button>
                             </div>
                         </div>
                     </div>
@@ -312,7 +308,7 @@
             const sel = document.getElementById('typeFilter');
             const types = new Set();
             dataStore[currentTab].forEach(item => { if(item.type) item.type.split('/').forEach(t => types.add(t.trim())); });
-            sel.innerHTML = '<option value="">Todos os Gêneros</option>' + Array.from(types).sort().map(t => `<option value="${t}">${t}</option>`).join('');
+            sel.innerHTML = '<option value="">Gêneros</option>' + Array.from(types).sort().map(t => `<option value="${t}">${t}</option>`).join('');
         }
 
         window.closeTrailer = () => { document.getElementById('trailerModal').style.display = 'none'; document.getElementById('trailerFrame').src = ""; };
