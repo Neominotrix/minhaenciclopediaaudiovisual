@@ -68,7 +68,6 @@
         .movie-info { padding: 15px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
         .movie-title { font-weight: bold; font-size: 1rem; margin-top: 5px; height: 2.8em; overflow: hidden; }
         
-        /* Estrelas + Nota */
         .rating-container { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         .stars-outer { position: relative; display: inline-block; color: #444; font-size: 0.9rem; }
         .stars-inner { position: absolute; top: 0; left: 0; overflow: hidden; width: 0; color: var(--star-color); white-space: nowrap; }
@@ -94,11 +93,9 @@
         .st-card { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 100%; }
         .st-poster { width: 600px; height: 900px; object-fit: cover; border-radius: 20px; border: 4px solid var(--neon-yellow); box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
         .st-title { font-size: 60px; font-weight: 900; text-align: center; margin-top: 40px; color: white; width: 100%; text-transform: uppercase; line-height: 1.1; }
-        
         .st-rating-row { display: flex; align-items: center; gap: 20px; margin-top: 10px; }
         .st-stars { font-size: 70px; color: var(--neon-yellow); }
         .st-number { font-size: 60px; color: var(--neon-yellow); font-weight: bold; }
-
         .st-review { font-size: 38px; color: #eee; font-style: italic; text-align: center; margin-top: 30px; width: 900px; line-height: 1.5; border-top: 2px solid #333; padding-top: 25px; word-wrap: break-word; }
 
         #trailerModal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
@@ -136,12 +133,19 @@
             </nav>
         </div>
         <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="Pesquisar..." oninput="window.applyFilters()">
-            <select id="typeFilter" onchange="window.applyFilters()"><option value="">Gêneros</option></select>
+            <input type="text" id="searchInput" placeholder="Pesquisar título..." oninput="window.applyFilters()">
+            <select id="typeFilter" onchange="window.applyFilters()"><option value="">Todos os Gêneros</option></select>
             <select id="ratingFilter" onchange="window.applyFilters()">
-                <option value="alpha">A-Z</option>
-                <option value="newest">Novos</option>
-                <option value="high-low">Melhores</option>
+                <optgroup label="Ordenar">
+                    <option value="alpha">Ordem Alfabética (A-Z)</option>
+                    <option value="newest">Adicionados Recentemente</option>
+                    <option value="high-low">Melhores Avaliados</option>
+                </optgroup>
+                <optgroup label="Filtrar por Estrela">
+                    <option value="5">Apenas 5 Estrelas</option>
+                    <option value="4">Apenas 4 Estrelas</option>
+                    <option value="3">Apenas 3 Estrelas</option>
+                </optgroup>
             </select>
         </div>
     </header>
@@ -163,14 +167,54 @@
         let dataStore = { filmes: [], series: [], animacoes: [] };
         let currentTab = 'filmes';
 
-        window.shareCard = async (fireId) => {
+        // --- SISTEMA DE TRAILER (COM BUSCA AUTOMÁTICA) ---
+        window.watchTrailer = async (fireId) => {
             const item = dataStore[currentTab].find(i => i.fireId === fireId);
             if (!item) return;
 
+            const frame = document.getElementById('trailerFrame');
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            // 1. Registrar o click no Firebase
+            try { await updateDoc(doc(db, currentTab, fireId), { clicks: increment(1) }); } catch(e){}
+
+            // 2. Se houver link manual, usa ele
+            if (item.trailerUrl && item.trailerUrl.trim() !== "") {
+                let yId = item.trailerUrl.includes("v=") ? item.trailerUrl.split("v=")[1].split("&")[0] : item.trailerUrl.split("youtu.be/")[1];
+                frame.src = yId ? `https://www.youtube.com/embed/${yId}?autoplay=1` : item.trailerUrl;
+                document.getElementById('trailerModal').style.display = 'flex';
+                btn.innerHTML = originalText;
+                return;
+            }
+
+            // 3. Caso contrário, busca no TMDB
+            const cat = (currentTab === 'series') ? 'tv' : 'movie';
+            try {
+                const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(item.title)}&language=pt-BR`);
+                const d = await r.json();
+                if (d.results[0]) {
+                    const v = await fetch(`https://api.themoviedb.org/3/${cat}/${d.results[0].id}/videos?api_key=${TMDB_API_KEY}`);
+                    const vd = await v.json();
+                    const t = vd.results.find(x => x.type === 'Trailer') || vd.results[0];
+                    if (t) {
+                        frame.src = `https://www.youtube.com/embed/${t.key}?autoplay=1`;
+                        document.getElementById('trailerModal').style.display = 'flex';
+                    } else { alert("Trailer não encontrado."); }
+                } else { alert("Obra não encontrada para busca de trailer."); }
+            } catch (e) { alert("Erro ao buscar trailer."); }
+            btn.innerHTML = originalText;
+        };
+
+        // --- SISTEMA DE COMPARTILHAMENTO ---
+        window.shareCard = async (fireId) => {
+            const item = dataStore[currentTab].find(i => i.fireId === fireId);
+            if (!item) return;
             const template = document.getElementById('story-template');
             const btn = event.currentTarget;
             const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...';
 
             const cleanImgUrl = item.imageUrl + (item.imageUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
             const ratingNum = parseFloat(item.rating || 0);
@@ -193,11 +237,12 @@
                             const link = document.createElement('a'); link.download = "story.png"; link.href = URL.createObjectURL(blob); link.click();
                         }
                     }, 'image/png');
-                } catch (e) { alert("Erro ao processar imagem."); } 
+                } catch (e) { alert("Erro na imagem."); } 
                 finally { btn.innerHTML = originalHtml; }
             }, 1000);
         };
 
+        // --- FILTROS E RENDERIZAÇÃO ---
         window.fetchFromFirebase = async () => {
             const s = await getDocs(collection(db, currentTab));
             dataStore[currentTab] = s.docs.map(d => ({ fireId: d.id, ...d.data() }));
@@ -227,7 +272,6 @@
                 if (sortOrRate === 'high-low') return (parseFloat(b.rating || 0)) - (parseFloat(a.rating || 0));
                 return a.title.localeCompare(b.title);
             });
-
             renderData(filtered);
         };
 
@@ -236,27 +280,23 @@
             g.innerHTML = items.map(item => {
                 const ratingVal = parseFloat(item.rating || 0);
                 const starWidth = (ratingVal / 5) * 100;
-
                 return `
                     <div class="movie-card">
                         <div class="click-badge"><i class="fas fa-fire"></i> ${item.clicks || 0}</div>
-                        <div class="movie-poster-container">
-                            <img src="${item.imageUrl}" class="movie-poster">
-                        </div>
+                        <div class="movie-poster-container"><img src="${item.imageUrl}" class="movie-poster"></div>
                         <div class="movie-info">
                             <div>
                                 <div class="movie-title">${item.title}</div>
                                 <div class="rating-container">
-                                    <div class="stars-outer">
-                                        <div class="stars-inner" style="width:${starWidth}%">★★★★★</div>
-                                        ★★★★★
-                                    </div>
+                                    <div class="stars-outer"><div class="stars-inner" style="width:${starWidth}%">★★★★★</div>★★★★★</div>
                                     <span class="rating-number">${ratingVal.toFixed(1)}</span>
                                 </div>
                                 ${item.review ? `<div class="movie-review">${item.review.replace(/\n/g, '<br>')}</div>` : ''}
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 5px;">
-                                <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}', '${item.title.replace(/'/g, "\\'")}', '${currentTab}', '${item.trailerUrl || ''}')">Trailer</button>
+                                <button class="btn-trailer" onclick="window.watchTrailer('${item.fireId}')">
+                                    <i class="fas fa-play"></i> Trailer
+                                </button>
                                 <button class="btn-share" onclick="window.shareCard('${item.fireId}')">
                                     <i class="fas fa-share-alt"></i> Compartilhar
                                 </button>
@@ -271,25 +311,12 @@
         function updateTypeDropdown() {
             const sel = document.getElementById('typeFilter');
             const types = new Set();
-            dataStore[currentTab].forEach(item => {
-                if(item.type) item.type.split('/').forEach(t => types.add(t.trim()));
-            });
-            sel.innerHTML = '<option value="">Todos os Gêneros</option>' + 
-                Array.from(types).sort().map(t => `<option value="${t}">${t}</option>`).join('');
+            dataStore[currentTab].forEach(item => { if(item.type) item.type.split('/').forEach(t => types.add(t.trim())); });
+            sel.innerHTML = '<option value="">Todos os Gêneros</option>' + Array.from(types).sort().map(t => `<option value="${t}">${t}</option>`).join('');
         }
 
-        window.watchTrailer = async (id, title, type, url) => {
-            const frame = document.getElementById('trailerFrame');
-            if(url) {
-                let yId = url.includes("v=") ? url.split("v=")[1].split("&")[0] : url.split("youtu.be/")[1];
-                frame.src = yId ? `https://www.youtube.com/embed/${yId}?autoplay=1` : url;
-                document.getElementById('trailerModal').style.display = 'flex';
-                try { await updateDoc(doc(db, currentTab, id), { clicks: increment(1) }); } catch(e){}
-            }
-        };
         window.closeTrailer = () => { document.getElementById('trailerModal').style.display = 'none'; document.getElementById('trailerFrame').src = ""; };
         window.switchTab = (t, e) => { currentTab = t; document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active')); e.classList.add('active'); fetchFromFirebase(); };
-        
         fetchFromFirebase();
     </script>
 </body>
